@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1">
+
+<title>FACE SCANNER</title>
+
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+<style>
+
+body {
+  margin: 0;
+  background: #111;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+h1 {
+  margin: 25px 0 10px;
+}
+
+#cameraBox {
+  position: relative;
+  width: 90%;
+  max-width: 800px;
+  margin: 20px auto;
+  background: #222;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+#video {
+  width: 100%;
+  display: block;
+  transform: scaleX(-1);
+}
+
+#status {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 20px;
+}
+
+#result {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 15px;
+}
+
+button {
+  padding: 15px 30px;
+  font-size: 20px;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>FACE SCANNER</h1>
+
+<div id="cameraBox">
+
+  <video
+    id="video"
+    autoplay
+    muted
+    playsinline>
+  </video>
+
+</div>
+
+<div id="status">
+  PRESS START CAMERA
+</div>
+
+<div id="result">
+</div>
+
+<button onclick="startCamera()">
+  START CAMERA
+</button>
+
+
+<script>
+
+const MODEL_URL =
+  "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights";
+
+let video;
+
+let faceMatcher = null;
+
+
+/* =========================================
+   LOAD MODELS
+========================================= */
+
+async function loadModels() {
+
+  document.getElementById("status").innerText =
+    "LOADING FACE MODEL...";
+
+  await faceapi.nets.tinyFaceDetector.loadFromUri(
+    MODEL_URL
+  );
+
+  await faceapi.nets.faceLandmark68TinyNet.loadFromUri(
+    MODEL_URL
+  );
+
+  await faceapi.nets.faceRecognitionNet.loadFromUri(
+    MODEL_URL
+  );
+
+  document.getElementById("status").innerText =
+    "FACE MODEL READY";
+
+}
+
+
+/* =========================================
+   CAMERA
+========================================= */
+
+async function startCamera() {
+
+  try {
+
+    await loadModels();
+
+    video =
+      document.getElementById("video");
+
+
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+
+        video: {
+          facingMode: "user",
+          width: {
+            ideal: 1280
+          },
+          height: {
+            ideal: 720
+          }
+        },
+
+        audio: false
+
+      });
+
+
+    video.srcObject = stream;
+
+
+    document.getElementById("status").innerText =
+      "CAMERA READY - LOOK AT CAMERA";
+
+
+    video.onloadedmetadata = function() {
+
+      scanFace();
+
+    };
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    document.getElementById("status").innerText =
+      "CAMERA ERROR";
+
+    document.getElementById("result").innerText =
+      error.message;
+
+  }
+
+}
+
+
+/* =========================================
+   FACE SCAN
+========================================= */
+
+async function scanFace() {
+
+  if (!video) {
+    return;
+  }
+
+
+  if (
+    video.readyState >= 2 &&
+    !video.paused
+  ) {
+
+    try {
+
+      const detection =
+        await faceapi
+          .detectSingleFace(
+            video,
+            new faceapi.TinyFaceDetectorOptions({
+              inputSize: 320,
+              scoreThreshold: 0.6
+            })
+          )
+          .withFaceLandmarks(true)
+          .withFaceDescriptor();
+
+
+      if (!detection) {
+
+        document.getElementById("status").innerText =
+          "NO FACE DETECTED";
+
+      } else {
+
+        document.getElementById("status").innerText =
+          "FACE DETECTED";
+
+        /*
+         * Untuk sementara hanya menampilkan
+         * bahwa wajah berhasil dibaca.
+         *
+         * DATABASE MATCH AKAN KITA MASUKKAN
+         * DI LANGKAH BERIKUTNYA.
+         */
+
+      }
+
+    } catch (error) {
+
+      console.error(error);
+
+    }
+
+  }
+
+
+  requestAnimationFrame(scanFace);
+
+}
+
+</script>
+
+</body>
+</html>
