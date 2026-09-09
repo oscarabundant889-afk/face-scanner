@@ -231,7 +231,6 @@ function setStatus(message) {
 
 }
 
-
 /* =====================================================
    JSONP API
 ===================================================== */
@@ -241,29 +240,79 @@ function apiJSONP(action) {
   return new Promise(function(resolve, reject) {
 
     const callbackName =
-      "FACE_CALLBACK_" +
-      Date.now() +
-      "_" +
-      Math.floor(
-        Math.random() * 100000
+      "FACE_API_CALLBACK";
+
+    const oldScript =
+      document.getElementById(
+        "faceApiScript"
       );
+
+    if (oldScript) {
+      oldScript.remove();
+    }
+
+
+    window[callbackName] =
+      function(data) {
+
+        console.log(
+          "FACE API RESPONSE:",
+          data
+        );
+
+        cleanup();
+
+        resolve(data);
+
+      };
 
 
     const script =
       document.createElement("script");
 
 
-    let finished = false;
+    script.id =
+      "faceApiScript";
+
+
+    script.onerror =
+      function() {
+
+        cleanup();
+
+        reject(
+          new Error(
+            "API CONNECTION ERROR"
+          )
+        );
+
+      };
+
+
+    const separator =
+      API_URL.indexOf("?") >= 0
+        ? "&"
+        : "?";
+
+
+    script.src =
+      API_URL +
+      separator +
+      "action=" +
+      encodeURIComponent(action) +
+      "&callback=" +
+      callbackName +
+      "&t=" +
+      Date.now();
+
+
+    document.body.appendChild(
+      script
+    );
 
 
     const timeout =
       setTimeout(function() {
-
-        if (finished) {
-          return;
-        }
-
-        finished = true;
 
         cleanup();
 
@@ -284,69 +333,16 @@ function apiJSONP(action) {
         delete window[callbackName];
       } catch (e) {}
 
-      if (
-        script &&
-        script.parentNode
-      ) {
-
-        script.parentNode.removeChild(
-          script
+      const s =
+        document.getElementById(
+          "faceApiScript"
         );
 
+      if (s) {
+        s.remove();
       }
 
     }
-
-
-    window[callbackName] =
-      function(data) {
-
-        if (finished) {
-          return;
-        }
-
-        finished = true;
-
-        cleanup();
-
-        resolve(data);
-
-      };
-
-
-    script.onerror =
-      function() {
-
-        if (finished) {
-          return;
-        }
-
-        finished = true;
-
-        cleanup();
-
-        reject(
-          new Error(
-            "API CONNECTION ERROR"
-          )
-        );
-
-      };
-
-
-    script.src =
-      API_URL +
-      "?action=" +
-      encodeURIComponent(action) +
-      "&callback=" +
-      encodeURIComponent(callbackName) +
-      "&t=" +
-      Date.now();
-
-
-    document.body.appendChild(
-      script
-    );
 
   });
 
