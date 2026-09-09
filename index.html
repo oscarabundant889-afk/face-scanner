@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 
 <meta charset="UTF-8">
 
 <meta name="viewport"
-      content="width=device-width, initial-scale=1">
+content="width=device-width, initial-scale=1">
 
 <title>FACE SCANNER</title>
 
@@ -22,14 +23,13 @@ body {
 }
 
 h1 {
-  margin: 25px 0 10px;
+  margin: 25px 0;
 }
 
 #cameraBox {
-  position: relative;
   width: 90%;
   max-width: 800px;
-  margin: 20px auto;
+  margin: auto;
   background: #222;
   border-radius: 15px;
   overflow: hidden;
@@ -42,15 +42,15 @@ h1 {
 }
 
 #status {
+  margin: 20px;
   font-size: 24px;
   font-weight: bold;
-  margin: 20px;
 }
 
 #result {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: bold;
-  margin: 15px;
+  margin: 20px;
 }
 
 button {
@@ -65,41 +65,58 @@ button {
 
 </head>
 
+
 <body>
 
 <h1>FACE SCANNER</h1>
 
+
 <div id="cameraBox">
 
-  <video
-    id="video"
-    autoplay
-    muted
-    playsinline>
-  </video>
+<video
+id="video"
+autoplay
+muted
+playsinline>
+</video>
 
 </div>
+
 
 <div id="status">
-  PRESS START CAMERA
+LOADING...
 </div>
+
 
 <div id="result">
 </div>
 
+
 <button onclick="startCamera()">
-  START CAMERA
+START CAMERA
 </button>
 
 
 <script>
 
-const MODEL_URL =
-  "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights";
+/* =========================================
+   PENTING
+   MASUKKAN URL WEB APP ANDA DI SINI
+========================================= */
 
-let video;
+const API_URL =
+"https://script.google.com/macros/s/AKfycbx3EErsXwz9mv52-YgaT3wkplnB21WvW47_MwHWANVYdBlgHeVMvqCfE5cDu96Myz6vUQ/exec";
+
+
+const MODEL_URL =
+"https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights";
+
+
+let video = null;
 
 let faceMatcher = null;
+
+let employees = [];
 
 
 /* =========================================
@@ -111,33 +128,216 @@ async function loadModels() {
   document.getElementById("status").innerText =
     "LOADING FACE MODEL...";
 
+
   await faceapi.nets.tinyFaceDetector.loadFromUri(
     MODEL_URL
   );
+
 
   await faceapi.nets.faceLandmark68TinyNet.loadFromUri(
     MODEL_URL
   );
 
+
   await faceapi.nets.faceRecognitionNet.loadFromUri(
     MODEL_URL
   );
 
-  document.getElementById("status").innerText =
-    "FACE MODEL READY";
 
 }
 
 
 /* =========================================
-   CAMERA
+   LOAD DATABASE
+========================================= */
+
+async function loadDatabase() {
+
+  document.getElementById("status").innerText =
+    "LOADING EMPLOYEE PHOTO DATABASE...";
+
+
+  const response =
+    await fetch(
+      API_URL + "?action=faces"
+    );
+
+
+  const data =
+    await response.json();
+
+
+  console.log(data);
+
+
+  if (!data.ok) {
+
+    throw new Error(
+      "DATABASE ERROR"
+    );
+
+  }
+
+
+  employees =
+    data.faces || [];
+
+
+  if (employees.length === 0) {
+
+    throw new Error(
+      "TIDAK ADA FOTO EMPLOYEE"
+    );
+
+  }
+
+
+  const labeledDescriptors = [];
+
+
+  for (
+    const employee of employees
+  ) {
+
+    try {
+
+      /*
+       * Convert Base64 → Image
+       */
+
+      const image =
+        await faceapi.fetchImage(
+          employee.image
+        );
+
+
+      /*
+       * Detect face dari foto database
+       */
+
+      const detection =
+        await faceapi
+          .detectSingleFace(
+            image,
+            new faceapi.TinyFaceDetectorOptions({
+              inputSize: 320,
+              scoreThreshold: 0.5
+            })
+          )
+          .withFaceLandmarks(true)
+          .withFaceDescriptor();
+
+
+      if (!detection) {
+
+        console.log(
+          "FACE TIDAK TERDETEKSI: " +
+          employee.employeeId
+        );
+
+        continue;
+
+      }
+
+
+      labeledDescriptors.push(
+
+        new faceapi.LabeledFaceDescriptors(
+
+          employee.employeeId,
+
+          [
+            detection.descriptor
+          ]
+
+        )
+
+      );
+
+
+      console.log(
+        "FACE DATABASE READY: " +
+        employee.employeeId +
+        " - " +
+        employee.name
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "PHOTO ERROR: " +
+        employee.employeeId,
+        error
+      );
+
+    }
+
+  }
+
+
+  if (
+    labeledDescriptors.length === 0
+  ) {
+
+    throw new Error(
+      "TIDAK ADA FOTO YANG BERHASIL DIPROSES"
+    );
+
+  }
+
+
+  /*
+   * Threshold 0.50
+   *
+   * Semakin kecil =
+   * semakin ketat.
+   */
+
+  faceMatcher =
+    new faceapi.FaceMatcher(
+      labeledDescriptors,
+      0.50
+    );
+
+
+  document.getElementById("status").innerText =
+    "DATABASE READY: " +
+    labeledDescriptors.length +
+    " EMPLOYEE";
+
+}
+
+
+/* =========================================
+   START CAMERA
 ========================================= */
 
 async function startCamera() {
 
   try {
 
+    document.getElementById("status").innerText =
+      "STARTING CAMERA...";
+
+
+    /*
+     * Load model
+     */
+
     await loadModels();
+
+
+    /*
+     * Load photo database
+     */
+
+    await loadDatabase();
+
+
+    /*
+     * Start webcam
+     */
 
     video =
       document.getElementById("video");
@@ -147,13 +347,17 @@ async function startCamera() {
       await navigator.mediaDevices.getUserMedia({
 
         video: {
+
           facingMode: "user",
+
           width: {
             ideal: 1280
           },
+
           height: {
             ideal: 720
           }
+
         },
 
         audio: false
@@ -161,26 +365,30 @@ async function startCamera() {
       });
 
 
-    video.srcObject = stream;
+    video.srcObject =
+      stream;
 
 
     document.getElementById("status").innerText =
       "CAMERA READY - LOOK AT CAMERA";
 
 
-    video.onloadedmetadata = function() {
+    video.onloadedmetadata =
+      function() {
 
-      scanFace();
+        scanFace();
 
-    };
+      };
 
 
   } catch (error) {
 
     console.error(error);
 
+
     document.getElementById("status").innerText =
-      "CAMERA ERROR";
+      "ERROR";
+
 
     document.getElementById("result").innerText =
       error.message;
@@ -194,67 +402,195 @@ async function startCamera() {
    FACE SCAN
 ========================================= */
 
+let lastEmployee = "";
+
+let stableCount = 0;
+
+
 async function scanFace() {
 
-  if (!video) {
+  if (
+    !video ||
+    video.readyState < 2
+  ) {
+
+    requestAnimationFrame(
+      scanFace
+    );
+
     return;
+
   }
 
 
-  if (
-    video.readyState >= 2 &&
-    !video.paused
-  ) {
+  try {
 
-    try {
+    const detection =
+      await faceapi
+        .detectSingleFace(
 
-      const detection =
-        await faceapi
-          .detectSingleFace(
-            video,
-            new faceapi.TinyFaceDetectorOptions({
-              inputSize: 320,
-              scoreThreshold: 0.6
-            })
-          )
-          .withFaceLandmarks(true)
-          .withFaceDescriptor();
+          video,
+
+          new faceapi.TinyFaceDetectorOptions({
+
+            inputSize: 320,
+
+            scoreThreshold: 0.6
+
+          })
+
+        )
+        .withFaceLandmarks(true)
+        .withFaceDescriptor();
 
 
-      if (!detection) {
+    /*
+     * Tidak ada wajah
+     */
 
-        document.getElementById("status").innerText =
-          "NO FACE DETECTED";
+    if (!detection) {
 
-      } else {
+      stableCount = 0;
 
-        document.getElementById("status").innerText =
-          "FACE DETECTED";
+      lastEmployee = "";
 
-        /*
-         * Untuk sementara hanya menampilkan
-         * bahwa wajah berhasil dibaca.
-         *
-         * DATABASE MATCH AKAN KITA MASUKKAN
-         * DI LANGKAH BERIKUTNYA.
-         */
+      document.getElementById("status").innerText =
+        "NO FACE DETECTED";
 
-      }
+      document.getElementById("result").innerText =
+        "";
 
-    } catch (error) {
+      requestAnimationFrame(
+        scanFace
+      );
 
-      console.error(error);
+      return;
 
     }
 
+
+    /*
+     * Cari wajah paling mirip
+     */
+
+    const match =
+      faceMatcher.findBestMatch(
+        detection.descriptor
+      );
+
+
+    console.log(
+      "MATCH:",
+      match.label,
+      "DISTANCE:",
+      match.distance
+    );
+
+
+    /*
+     * UNKNOWN
+     */
+
+    if (
+      match.label === "unknown"
+    ) {
+
+      stableCount = 0;
+
+      lastEmployee = "";
+
+      document.getElementById("status").innerText =
+        "FACE NOT RECOGNIZED";
+
+      document.getElementById("result").innerText =
+        "UNKNOWN";
+
+      requestAnimationFrame(
+        scanFace
+      );
+
+      return;
+
+    }
+
+
+    /*
+     * Employee ditemukan
+     */
+
+    if (
+      match.label === lastEmployee
+    ) {
+
+      stableCount++;
+
+    } else {
+
+      lastEmployee =
+        match.label;
+
+      stableCount = 1;
+
+    }
+
+
+    /*
+     * Harus stabil beberapa frame
+     */
+
+    if (
+      stableCount >= 3
+    ) {
+
+      const employee =
+        employees.find(
+          function(item) {
+
+            return String(
+              item.employeeId
+            ) === String(
+              match.label
+            );
+
+          }
+        );
+
+
+      document.getElementById("status").innerText =
+        "✅ FACE MATCH";
+
+
+      document.getElementById("result").innerText =
+        employee
+          ? employee.employeeId +
+            " - " +
+            employee.name
+          : match.label;
+
+
+    } else {
+
+      document.getElementById("status").innerText =
+        "MATCHING...";
+
+    }
+
+
+  } catch (error) {
+
+    console.error(error);
+
   }
 
 
-  requestAnimationFrame(scanFace);
+  requestAnimationFrame(
+    scanFace
+  );
 
 }
 
 </script>
 
 </body>
+
 </html>
