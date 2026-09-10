@@ -1,2 +1,1 @@
-const FACE_DATABASE = [
-];
+
