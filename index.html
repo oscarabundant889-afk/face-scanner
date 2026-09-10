@@ -693,6 +693,98 @@ async function loadDatabase() {
 }
 
 
+     /* =====================================================
+   SEND FACE RESULT TO GOOGLE SHEET
+===================================================== */
+
+function sendScanToSheet(employeeId, employeeName) {
+
+  return new Promise(function(resolve, reject) {
+
+    const callbackName =
+      "FACE_SCAN_CALLBACK_" +
+      Date.now();
+
+    const script =
+      document.createElement("script");
+
+    const timeout =
+      setTimeout(function() {
+
+        cleanup();
+
+        reject(
+          new Error("SCAN API TIMEOUT")
+        );
+
+      }, 15000);
+
+    window[callbackName] =
+      function(data) {
+
+        cleanup();
+
+        if (!data) {
+
+          reject(
+            new Error(
+              "SCAN API TIDAK MEMBERIKAN DATA"
+            )
+          );
+
+          return;
+
+        }
+
+        resolve(data);
+
+      };
+
+    script.onerror =
+      function() {
+
+        cleanup();
+
+        reject(
+          new Error(
+            "SCAN API CONNECTION ERROR"
+          )
+        );
+
+      };
+
+    script.src =
+      API_URL +
+      "?action=scan" +
+      "&employeeId=" +
+      encodeURIComponent(employeeId) +
+      "&employeeName=" +
+      encodeURIComponent(employeeName) +
+      "&callback=" +
+      callbackName +
+      "&t=" +
+      Date.now();
+
+    document.body.appendChild(script);
+
+    function cleanup() {
+
+      clearTimeout(timeout);
+
+      try {
+
+        delete window[callbackName];
+
+      } catch (e) {}
+
+      script.remove();
+
+    }
+
+  });
+
+} 
+
 
 /* =====================================================
    START CAMERA
@@ -939,33 +1031,76 @@ async function scanFace() {
       REQUIRED_STABLE_MATCH
     );
 
+if (
+  stableCount >=
+  REQUIRED_STABLE_MATCH
+) {
 
-    if (
-      stableCount >=
-      REQUIRED_STABLE_MATCH
-    ) {
+  setStatus(
+    "FACE VERIFIED"
+  );
 
-      setStatus(
-        "FACE VERIFIED"
+  resultBox.innerText =
+    "✓ " +
+    employeeId +
+    " - " +
+    employeeName;
+
+  try {
+
+    const result =
+      await sendScanToSheet(
+        employeeId,
+        employeeName
       );
 
+    if (result.ok) {
 
       resultBox.innerText =
         "✓ " +
         employeeId +
         " - " +
-        employeeName;
+        employeeName +
+        "\nTIME IN: " +
+        result.timeIn;
 
+      setStatus(
+        "SCAN SAVED"
+      );
 
-      stableCount =
-        0;
+      console.log(
+        "SCAN SAVED:",
+        result
+      );
 
-      lastEmployee =
-        "";
+    } else {
+
+      setStatus(
+        "SHEET ERROR"
+      );
+
+      resultBox.innerText =
+        result.message;
 
     }
 
+  } catch (error) {
 
+    setStatus(
+      "SCAN ERROR"
+    );
+
+    resultBox.innerText =
+      error.message;
+
+  }
+
+  stableCount = 0;
+
+  lastEmployee = "";
+
+}
+    
   } catch (error) {
 
     console.error(
