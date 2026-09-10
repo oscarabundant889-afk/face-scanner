@@ -164,6 +164,303 @@ const MATCH_THRESHOLD = 0.50;
 
 
 const REQUIRED_STABLE_MATCH = 3;
+/* =====================================================
+   AUTO TARGET / AUTO CAMERA
+===================================================== */
+
+let currentTarget = null;
+
+let targetChecking = false;
+
+let autoCameraStarted = false;
+
+
+/* =====================================================
+   GET TARGET DARI GOOGLE SHEET
+===================================================== */
+
+function getCurrentTarget() {
+
+  return new Promise(
+    function(resolve, reject) {
+
+      const callbackName =
+        "FACE_TARGET_CALLBACK_" +
+        Date.now();
+
+
+      const script =
+        document.createElement("script");
+
+
+      const timeout =
+        setTimeout(
+          function() {
+
+            cleanup();
+
+            reject(
+              new Error(
+                "TARGET API TIMEOUT"
+              )
+            );
+
+          },
+          10000
+        );
+
+
+      window[callbackName] =
+        function(data) {
+
+          cleanup();
+
+          resolve(data);
+
+        };
+
+
+      script.onerror =
+        function() {
+
+          cleanup();
+
+          reject(
+            new Error(
+              "TARGET API CONNECTION ERROR"
+            )
+          );
+
+        };
+
+
+      script.src =
+        API_URL +
+        "?action=target" +
+        "&callback=" +
+        callbackName +
+        "&t=" +
+        Date.now();
+
+
+      document.body.appendChild(
+        script
+      );
+
+
+      function cleanup() {
+
+        clearTimeout(
+          timeout
+        );
+
+
+        try {
+
+          delete window[
+            callbackName
+          ];
+
+        } catch (e) {}
+
+
+        if (script) {
+
+          script.remove();
+
+        }
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   CHECK TARGET TERUS-MENERUS
+===================================================== */
+
+async function checkTarget() {
+
+  if (targetChecking) {
+    return;
+  }
+
+
+  targetChecking = true;
+
+
+  try {
+
+    const data =
+      await getCurrentTarget();
+
+
+    if (
+      !data ||
+      !data.ok
+    ) {
+
+      return;
+    }
+
+
+    if (
+      !data.ready
+    ) {
+
+      return;
+    }
+
+
+    if (
+      !data.sheet ||
+      !data.row ||
+      !data.column
+    ) {
+
+      return;
+    }
+
+
+    /*
+      HANYA A DAN E
+    */
+
+    if (
+      data.column !== 1 &&
+      data.column !== 5
+    ) {
+
+      return;
+    }
+
+
+    const newTarget =
+      data.sheet +
+      "|" +
+      data.row +
+      "|" +
+      data.column;
+
+
+    const oldTarget =
+      currentTarget
+        ? currentTarget.sheet +
+          "|" +
+          currentTarget.row +
+          "|" +
+          currentTarget.column
+        : "";
+
+
+    /*
+      TARGET BARU
+    */
+
+    if (
+      newTarget !== oldTarget
+    ) {
+
+      currentTarget = {
+
+        sheet:
+          data.sheet,
+
+        row:
+          data.row,
+
+        column:
+          data.column
+      };
+
+
+      /*
+        RESET CAMERA STATE
+      */
+
+      autoCameraStarted =
+        false;
+
+
+      /*
+        TAMPILKAN TARGET
+      */
+
+      resultBox.innerText =
+        "TARGET: " +
+        data.sheet +
+        "!" +
+        (
+          data.column === 1
+            ? "A"
+            : "E"
+        ) +
+        data.row;
+
+
+      /*
+        CAMERA OTOMATIS
+      */
+
+      if (
+        !scanning &&
+        !autoCameraStarted
+      ) {
+
+        autoCameraStarted =
+          true;
+
+
+        await startCamera();
+
+      }
+
+    }
+
+  } catch (error) {
+
+    console.log(
+      "TARGET CHECK:",
+      error.message
+    );
+
+  } finally {
+
+    targetChecking =
+      false;
+
+  }
+
+}
+
+
+/* =====================================================
+   START TARGET MONITOR
+===================================================== */
+
+function startTargetMonitor() {
+
+  /*
+    Cek pertama
+  */
+
+  checkTarget();
+
+
+  /*
+    Cek setiap 1 detik
+  */
+
+  setInterval(
+    checkTarget,
+    1000
+  );
+
+}
+      
 
 
 /*
