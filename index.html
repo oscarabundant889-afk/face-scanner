@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 
 <meta charset="UTF-8">
@@ -99,9 +100,11 @@ button:disabled {
 
 </head>
 
+
 <body>
 
 <h1>FACE SCANNER</h1>
+
 
 <div id="cameraBox">
 
@@ -118,18 +121,23 @@ button:disabled {
 
 </div>
 
+
 <div id="status">
   READY
 </div>
 
+
 <div id="result">
 </div>
+
 
 <div id="distance">
 </div>
 
+
 <div id="databaseInfo">
 </div>
+
 
 <button id="startButton">
   START CAMERA
@@ -142,11 +150,16 @@ button:disabled {
    CONFIGURATION
 ===================================================== */
 
+const API_URL =
+"https://script.google.com/macros/s/AKfycbz5FW5HHWCMMR4HcC_ob8qmi8OtAtTyvtCgWOX608YKRF-Cze0p5lKwuxbeOFuXK9tVMg/exec";
+
+
 const MODEL_URL =
 "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights";
 
 
 const MATCH_THRESHOLD = 0.50;
+
 
 const REQUIRED_STABLE_MATCH = 3;
 
@@ -158,20 +171,26 @@ const REQUIRED_STABLE_MATCH = 3;
 const video =
 document.getElementById("video");
 
+
 const placeholder =
 document.getElementById("placeholder");
+
 
 const statusBox =
 document.getElementById("status");
 
+
 const resultBox =
 document.getElementById("result");
+
 
 const distanceBox =
 document.getElementById("distance");
 
+
 const databaseInfo =
 document.getElementById("databaseInfo");
+
 
 const startButton =
 document.getElementById("startButton");
@@ -206,69 +225,204 @@ function setStatus(message) {
 
 
 /* =====================================================
-   LOAD FACE MODELS
+   GET DATABASE
+   JSONP
 ===================================================== */
 
-async function loadModels() {
+function getFaceDatabase() {
 
-  setStatus("LOADING FACE MODEL...");
+  return new Promise(function(resolve, reject) {
 
-  console.log("Loading Tiny Face Detector...");
+    const callbackName =
+      "FACE_DATABASE_CALLBACK_" +
+      Date.now();
 
-  await faceapi.nets.tinyFaceDetector.loadFromUri(
-    MODEL_URL
-  );
 
-  console.log("Loading Face Landmark...");
+    const script =
+      document.createElement("script");
 
-  await faceapi.nets.faceLandmark68TinyNet.loadFromUri(
-    MODEL_URL
-  );
 
-  console.log("Loading Face Recognition...");
+    const timeout =
+      setTimeout(function() {
 
-  await faceapi.nets.faceRecognitionNet.loadFromUri(
-    MODEL_URL
-  );
+        cleanup();
 
-  console.log("ALL FACE MODELS READY");
+        reject(
+          new Error(
+            "FACE API TIMEOUT"
+          )
+        );
+
+      }, 30000);
+
+
+    window[callbackName] =
+      function(data) {
+
+        cleanup();
+
+        if (!data) {
+
+          reject(
+            new Error(
+              "FACE API TIDAK MEMBERIKAN DATA"
+            )
+          );
+
+          return;
+        }
+
+
+        resolve(data);
+
+      };
+
+
+    script.onerror =
+      function() {
+
+        cleanup();
+
+        reject(
+          new Error(
+            "FACE API CONNECTION ERROR"
+          )
+        );
+
+      };
+
+
+    script.src =
+      API_URL +
+      "?action=faces" +
+      "&callback=" +
+      callbackName +
+      "&t=" +
+      Date.now();
+
+
+    document.body.appendChild(
+      script
+    );
+
+
+    function cleanup() {
+
+      clearTimeout(timeout);
+
+
+      try {
+
+        delete window[callbackName];
+
+      } catch (e) {}
+
+
+      if (script) {
+
+        script.remove();
+
+      }
+
+    }
+
+  });
 
 }
 
 
 /* =====================================================
-   LOAD DATABASE
+   LOAD FACE MODELS
+===================================================== */
+
+async function loadModels() {
+
+  setStatus(
+    "LOADING FACE MODEL..."
+  );
+
+
+  console.log(
+    "Loading Tiny Face Detector..."
+  );
+
+
+  await faceapi.nets.tinyFaceDetector.loadFromUri(
+    MODEL_URL
+  );
+
+
+  console.log(
+    "Loading Face Landmark..."
+  );
+
+
+  await faceapi.nets.faceLandmark68TinyNet.loadFromUri(
+    MODEL_URL
+  );
+
+
+  console.log(
+    "Loading Face Recognition..."
+  );
+
+
+  await faceapi.nets.faceRecognitionNet.loadFromUri(
+    MODEL_URL
+  );
+
+
+  console.log(
+    "ALL FACE MODELS READY"
+  );
+
+}
+
+
+/* =====================================================
+   LOAD PHOTO DATABASE
 ===================================================== */
 
 async function loadDatabase() {
 
-  setStatus("LOADING PHOTO DATABASE...");
+  setStatus(
+    "LOADING PHOTO DATABASE..."
+  );
 
-  /*
-   * Database sementara.
-   *
-   * Nanti akan diisi dari database.js
-   */
 
-  if (
-    typeof FACE_DATABASE === "undefined"
-  ) {
+  console.log(
+    "REQUESTING FACE DATABASE..."
+  );
+
+
+  const data =
+    await getFaceDatabase();
+
+
+  console.log(
+    "FACE API RESPONSE:",
+    data
+  );
+
+
+  if (!data.ok) {
 
     throw new Error(
-      "DATABASE.JS BELUM ADA"
+      data.message ||
+      "FACE DATABASE ERROR"
     );
 
   }
 
 
   employees =
-    Array.isArray(FACE_DATABASE)
-      ? FACE_DATABASE
+    Array.isArray(data.faces)
+      ? data.faces
       : [];
 
 
   console.log(
-    "TOTAL DATABASE:",
+    "TOTAL PHOTO:",
     employees.length
   );
 
@@ -278,7 +432,7 @@ async function loadDatabase() {
   ) {
 
     throw new Error(
-      "TIDAK ADA DATA EMPLOYEE"
+      "TIDAK ADA FOTO EMPLOYEE"
     );
 
   }
@@ -294,7 +448,7 @@ async function loadDatabase() {
 
 
   /* ===================================================
-     PROCESS PHOTO
+     PROCESS EACH EMPLOYEE
   =================================================== */
 
   for (
@@ -338,9 +492,7 @@ async function loadDatabase() {
     );
 
 
-    if (
-      !employee.image
-    ) {
+    if (!employee.image) {
 
       console.warn(
         "PHOTO KOSONG:",
@@ -363,19 +515,23 @@ async function loadDatabase() {
       const detection =
         await faceapi
           .detectSingleFace(
+
             image,
+
             new faceapi.TinyFaceDetectorOptions({
+
               inputSize: 320,
+
               scoreThreshold: 0.5
+
             })
+
           )
           .withFaceLandmarks(true)
           .withFaceDescriptor();
 
 
-      if (
-        !detection
-      ) {
+      if (!detection) {
 
         console.warn(
           "FACE TIDAK DITEMUKAN:",
@@ -389,12 +545,17 @@ async function loadDatabase() {
 
 
       labeledDescriptors.push(
+
         new faceapi.LabeledFaceDescriptors(
+
           employeeId,
+
           [
             detection.descriptor
           ]
+
         )
+
       );
 
 
@@ -419,7 +580,7 @@ async function loadDatabase() {
 
 
   /* ===================================================
-     CHECK
+     CHECK DATABASE
   =================================================== */
 
   if (
@@ -434,13 +595,16 @@ async function loadDatabase() {
 
 
   /* ===================================================
-     FACE MATCHER
+     CREATE FACE MATCHER
   =================================================== */
 
   faceMatcher =
     new faceapi.FaceMatcher(
+
       labeledDescriptors,
+
       MATCH_THRESHOLD
+
     );
 
 
@@ -459,6 +623,12 @@ async function loadDatabase() {
     "FACE DATABASE READY"
   );
 
+
+  console.log(
+    "TOTAL FACE READY:",
+    labeledDescriptors.length
+  );
+
 }
 
 
@@ -470,11 +640,16 @@ async function startCamera() {
 
   try {
 
-    startButton.disabled = true;
+    startButton.disabled =
+      true;
 
-    resultBox.innerText = "";
 
-    distanceBox.innerText = "";
+    resultBox.innerText =
+      "";
+
+
+    distanceBox.innerText =
+      "";
 
 
     /* STEP 1 */
@@ -543,7 +718,8 @@ async function startCamera() {
     await video.play();
 
 
-    scanning = true;
+    scanning =
+      true;
 
 
     setStatus(
@@ -591,7 +767,9 @@ async function startCamera() {
 async function scanFace() {
 
   if (!scanning) {
+
     return;
+
   }
 
 
@@ -633,21 +811,30 @@ async function scanFace() {
 
     if (!detection) {
 
-      lastEmployee = "";
+      lastEmployee =
+        "";
 
-      stableCount = 0;
+      stableCount =
+        0;
+
 
       setStatus(
         "NO FACE DETECTED"
       );
 
-      resultBox.innerText = "";
 
-      distanceBox.innerText = "";
+      resultBox.innerText =
+        "";
+
+
+      distanceBox.innerText =
+        "";
+
 
       requestAnimationFrame(
         scanFace
       );
+
 
       return;
 
@@ -676,16 +863,21 @@ async function scanFace() {
       match.label === "unknown"
     ) {
 
-      lastEmployee = "";
+      lastEmployee =
+        "";
 
-      stableCount = 0;
+      stableCount =
+        0;
+
 
       setStatus(
         "FACE NOT RECOGNIZED"
       );
 
+
       resultBox.innerText =
         "UNKNOWN";
+
 
       distanceBox.innerText =
         "Distance: " +
@@ -696,15 +888,17 @@ async function scanFace() {
         scanFace
       );
 
+
       return;
 
     }
 
 
-    /* EMPLOYEE */
+    /* FIND EMPLOYEE */
 
     const employee =
       employees.find(
+
         function(item) {
 
           return String(
@@ -715,18 +909,23 @@ async function scanFace() {
           ).trim();
 
         }
+
       );
 
 
     if (!employee) {
 
-      lastEmployee = "";
+      lastEmployee =
+        "";
 
-      stableCount = 0;
+      stableCount =
+        0;
+
 
       setStatus(
         "EMPLOYEE DATABASE ERROR"
       );
+
 
       resultBox.innerText =
         match.label;
@@ -736,6 +935,7 @@ async function scanFace() {
         scanFace
       );
 
+
       return;
 
     }
@@ -744,7 +944,8 @@ async function scanFace() {
     /* STABLE MATCH */
 
     if (
-      match.label === lastEmployee
+      match.label ===
+      lastEmployee
     ) {
 
       stableCount++;
@@ -754,7 +955,8 @@ async function scanFace() {
       lastEmployee =
         match.label;
 
-      stableCount = 1;
+      stableCount =
+        1;
 
     }
 
@@ -803,9 +1005,24 @@ async function scanFace() {
 
 
       console.log(
-        "FACE MATCH CONFIRMED:",
-        employee.employeeId,
-        employee.name,
+        "FACE MATCH CONFIRMED"
+      );
+
+
+      console.log(
+        "EMPLOYEE ID:",
+        employee.employeeId
+      );
+
+
+      console.log(
+        "NAME:",
+        employee.name
+      );
+
+
+      console.log(
+        "DISTANCE:",
         match.distance
       );
 
@@ -844,8 +1061,6 @@ startButton.addEventListener(
 
 </script>
 
-<!-- DATABASE -->
-<script src="database.js"></script>
-
 </body>
+
 </html>
