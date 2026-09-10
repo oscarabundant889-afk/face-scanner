@@ -1,12 +1,9 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 
 <meta charset="UTF-8">
-
-<meta name="viewport"
-      content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>FACE SCANNER</title>
 
@@ -28,7 +25,7 @@ body {
 }
 
 h1 {
-  margin: 25px 0 20px 0;
+  margin: 25px 0 20px;
   font-size: 40px;
 }
 
@@ -68,6 +65,7 @@ h1 {
   font-size: 38px;
   font-weight: bold;
   min-height: 50px;
+  white-space: pre-line;
 }
 
 #distance {
@@ -79,6 +77,12 @@ h1 {
 #databaseInfo {
   margin-top: 15px;
   font-size: 18px;
+  color: #aaa;
+}
+
+#targetInfo {
+  margin-top: 15px;
+  font-size: 22px;
   color: #aaa;
 }
 
@@ -100,16 +104,14 @@ button:disabled {
 
 </head>
 
-
 <body>
 
 <h1>FACE SCANNER</h1>
 
-
 <div id="cameraBox">
 
   <div id="placeholder">
-    CAMERA READY
+    WAITING FOR TARGET...
   </div>
 
   <video
@@ -121,23 +123,17 @@ button:disabled {
 
 </div>
 
-
 <div id="status">
-  READY
+  WAITING FOR CELL
 </div>
 
+<div id="result"></div>
 
-<div id="result">
-</div>
+<div id="distance"></div>
 
+<div id="targetInfo"></div>
 
-<div id="distance">
-</div>
-
-
-<div id="databaseInfo">
-</div>
-
+<div id="databaseInfo"></div>
 
 <button
   id="startButton"
@@ -153,65 +149,145 @@ button:disabled {
 ===================================================== */
 
 const API_URL =
-"https://script.google.com/macros/s/AKfycbzCtKYN4mfelCDJWXK5c3GUUompPX4Esl8TdLjOlqXYpSjX8dfLdh6sjgMTGTpzaY_mMg/exec";
+  "https://script.google.com/macros/s/AKfycbzCtKYN4mfelCDJWXK5c3GUUompPX4Esl8TdLjOlqXYpSjX8dfLdh6sjgMTGTpzaY_mMg/exec";
 
 
 const MODEL_URL =
-"https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights";
+  "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights";
 
 
 const MATCH_THRESHOLD = 0.50;
 
 
 const REQUIRED_STABLE_MATCH = 3;
+
+
 /* =====================================================
-   AUTO TARGET / AUTO CAMERA
+   ELEMENT
 ===================================================== */
 
-let currentTarget = null;
+const video =
+  document.getElementById("video");
+
+const placeholder =
+  document.getElementById("placeholder");
+
+const statusBox =
+  document.getElementById("status");
+
+const resultBox =
+  document.getElementById("result");
+
+const distanceBox =
+  document.getElementById("distance");
+
+const databaseInfo =
+  document.getElementById("databaseInfo");
+
+const targetInfo =
+  document.getElementById("targetInfo");
+
+const startButton =
+  document.getElementById("startButton");
+
+
+/* =====================================================
+   VARIABLES
+===================================================== */
+
+let faceMatcher = null;
+
+let employees = [];
+
+let cameraStream = null;
+
+let scanning = false;
+
+let scanLocked = false;
+
+let stableCount = 0;
+
+let lastEmployee = "";
+
+let modelsLoaded = false;
+
+let databaseLoaded = false;
 
 let targetChecking = false;
 
-let autoCameraStarted = false;
+let currentTarget = null;
+
+let targetMonitor = null;
 
 
 /* =====================================================
-   GET TARGET DARI GOOGLE SHEET
+   STATUS
 ===================================================== */
 
-function getCurrentTarget() {
+function setStatus(message) {
+
+  statusBox.innerText = message;
+
+}
+
+
+/* =====================================================
+   JSONP REQUEST
+===================================================== */
+
+function apiRequest(
+  action,
+  params = {},
+  timeoutMs = 30000
+) {
 
   return new Promise(
     function(resolve, reject) {
 
       const callbackName =
-        "FACE_TARGET_CALLBACK_" +
-        Date.now();
+        "FACE_CALLBACK_" +
+        Date.now() +
+        "_" +
+        Math.random()
+          .toString(36)
+          .substring(2);
 
 
       const script =
         document.createElement("script");
 
 
+      let finished = false;
+
+
       const timeout =
         setTimeout(
           function() {
+
+            if (finished) return;
+
+            finished = true;
 
             cleanup();
 
             reject(
               new Error(
-                "TARGET API TIMEOUT"
+                "API TIMEOUT: " +
+                action
               )
             );
 
           },
-          10000
+          timeoutMs
         );
 
 
       window[callbackName] =
         function(data) {
+
+          if (finished) return;
+
+          finished = true;
 
           cleanup();
 
@@ -223,25 +299,52 @@ function getCurrentTarget() {
       script.onerror =
         function() {
 
+          if (finished) return;
+
+          finished = true;
+
           cleanup();
 
           reject(
             new Error(
-              "TARGET API CONNECTION ERROR"
+              "API CONNECTION ERROR: " +
+              action
             )
           );
 
         };
 
 
-      script.src =
+      let url =
         API_URL +
-        "?action=target" +
+        "?action=" +
+        encodeURIComponent(action) +
         "&callback=" +
-        callbackName +
+        encodeURIComponent(callbackName);
+
+
+      Object.keys(params)
+        .forEach(
+          function(key) {
+
+            url +=
+              "&" +
+              encodeURIComponent(key) +
+              "=" +
+              encodeURIComponent(
+                params[key]
+              );
+
+          }
+        );
+
+
+      url +=
         "&t=" +
         Date.now();
 
+
+      script.src = url;
 
       document.body.appendChild(
         script
@@ -250,10 +353,7 @@ function getCurrentTarget() {
 
       function cleanup() {
 
-        clearTimeout(
-          timeout
-        );
-
+        clearTimeout(timeout);
 
         try {
 
@@ -262,7 +362,6 @@ function getCurrentTarget() {
           ];
 
         } catch (e) {}
-
 
         if (script) {
 
@@ -279,13 +378,30 @@ function getCurrentTarget() {
 
 
 /* =====================================================
-   CHECK TARGET TERUS-MENERUS
+   GET CURRENT TARGET
+===================================================== */
+
+async function getCurrentTarget() {
+
+  return await apiRequest(
+    "target",
+    {},
+    10000
+  );
+
+}
+
+
+/* =====================================================
+   TARGET CHECK
 ===================================================== */
 
 async function checkTarget() {
 
   if (targetChecking) {
+
     return;
+
   }
 
 
@@ -304,6 +420,7 @@ async function checkTarget() {
     ) {
 
       return;
+
     }
 
 
@@ -311,7 +428,13 @@ async function checkTarget() {
       !data.ready
     ) {
 
+      /*
+        Tidak ada target READY.
+        Kamera tetap mati.
+      */
+
       return;
+
     }
 
 
@@ -322,12 +445,9 @@ async function checkTarget() {
     ) {
 
       return;
+
     }
 
-
-    /*
-      HANYA A DAN E
-    */
 
     if (
       data.column !== 1 &&
@@ -335,10 +455,11 @@ async function checkTarget() {
     ) {
 
       return;
+
     }
 
 
-    const newTarget =
+    const newKey =
       data.sheet +
       "|" +
       data.row +
@@ -346,7 +467,7 @@ async function checkTarget() {
       data.column;
 
 
-    const oldTarget =
+    const oldKey =
       currentTarget
         ? currentTarget.sheet +
           "|" +
@@ -361,8 +482,27 @@ async function checkTarget() {
     */
 
     if (
-      newTarget !== oldTarget
+      newKey !== oldKey
     ) {
+
+      /*
+        Jika kamera sedang bekerja
+        untuk target lama, hentikan.
+      */
+
+      if (scanning) {
+
+        stopCamera();
+
+      }
+
+
+      scanLocked = false;
+
+      stableCount = 0;
+
+      lastEmployee = "";
+
 
       currentTarget = {
 
@@ -370,67 +510,51 @@ async function checkTarget() {
           data.sheet,
 
         row:
-          data.row,
+          Number(data.row),
 
         column:
-          data.column
+          Number(data.column)
+
       };
 
 
-      /*
-        RESET CAMERA STATE
-      */
-
-      autoCameraStarted =
-        false;
+      const columnName =
+        data.column === 1
+          ? "A"
+          : "E";
 
 
-      /*
-        TAMPILKAN TARGET
-      */
-
-      resultBox.innerText =
+      targetInfo.innerText =
         "TARGET: " +
         data.sheet +
         "!" +
-        (
-          data.column === 1
-            ? "A"
-            : "E"
-        ) +
+        columnName +
         data.row;
 
 
+      resultBox.innerText = "";
+
+      distanceBox.innerText = "";
+
+
       /*
-        CAMERA OTOMATIS
+        OTOMATIS START CAMERA
       */
 
-      if (
-        !scanning &&
-        !autoCameraStarted
-      ) {
-
-        autoCameraStarted =
-          true;
-
-
-        await startCamera();
-
-      }
+      await startCamera();
 
     }
 
   } catch (error) {
 
     console.log(
-      "TARGET CHECK:",
+      "TARGET CHECK ERROR:",
       error.message
     );
 
   } finally {
 
-    targetChecking =
-      false;
+    targetChecking = false;
 
   }
 
@@ -443,93 +567,58 @@ async function checkTarget() {
 
 function startTargetMonitor() {
 
-  /*
-    Cek pertama
-  */
-
   checkTarget();
 
 
-  /*
-    Cek setiap 1 detik
-  */
-
-  setInterval(
-    checkTarget,
-    1000
-  );
+  targetMonitor =
+    setInterval(
+      checkTarget,
+      1000
+    );
 
 }
-      
-
-
-/*
-   Jeda setelah berhasil scan.
-   Mencegah orang yang sama tercatat berkali-kali.
-*/
-
-const SCAN_COOLDOWN = 5000;
 
 
 /* =====================================================
-   ELEMENT
+   LOAD MODELS
 ===================================================== */
 
-const video =
-document.getElementById("video");
+async function loadModels() {
+
+  if (modelsLoaded) {
+
+    return;
+
+  }
 
 
-const placeholder =
-document.getElementById("placeholder");
+  setStatus(
+    "LOADING FACE MODEL..."
+  );
 
 
-const statusBox =
-document.getElementById("status");
+  await faceapi.nets
+    .tinyFaceDetector
+    .loadFromUri(
+      MODEL_URL
+    );
 
 
-const resultBox =
-document.getElementById("result");
+  await faceapi.nets
+    .faceLandmark68TinyNet
+    .loadFromUri(
+      MODEL_URL
+    );
 
 
-const distanceBox =
-document.getElementById("distance");
+  await faceapi.nets
+    .faceRecognitionNet
+    .loadFromUri(
+      MODEL_URL
+    );
 
 
-const databaseInfo =
-document.getElementById("databaseInfo");
-
-
-const startButton =
-document.getElementById("startButton");
-
-
-/* =====================================================
-   VARIABLES
-===================================================== */
-
-let faceMatcher = null;
-
-let employees = [];
-
-let cameraStream = null;
-
-let scanning = false;
-
-let lastEmployee = "";
-
-let stableCount = 0;
-
-let scanLocked = false;
-
-
-/* =====================================================
-   STATUS
-===================================================== */
-
-function setStatus(message) {
-
-  statusBox.innerText =
-    message;
+  modelsLoaded = true;
 
 }
 
@@ -538,137 +627,46 @@ function setStatus(message) {
    GET FACE DATABASE
 ===================================================== */
 
-function getFaceDatabase() {
+async function getFaceDatabase() {
 
-  return new Promise(function(resolve, reject) {
-
-    const callbackName =
-      "FACE_DATABASE_CALLBACK_" +
-      Date.now();
-
-    const script =
-      document.createElement("script");
-
-    const timeout =
-      setTimeout(function() {
-
-        cleanup();
-
-        reject(
-          new Error(
-            "FACE API TIMEOUT"
-          )
-        );
-
-      }, 30000);
-
-
-    window[callbackName] =
-      function(data) {
-
-        cleanup();
-
-        if (!data) {
-
-          reject(
-            new Error(
-              "FACE API TIDAK MEMBERIKAN DATA"
-            )
-          );
-
-          return;
-
-        }
-
-        resolve(data);
-
-      };
-
-
-    script.onerror =
-      function() {
-
-        cleanup();
-
-        reject(
-          new Error(
-            "FACE API CONNECTION ERROR"
-          )
-        );
-
-      };
-
-
-    script.src =
-      API_URL +
-      "?action=faces" +
-      "&callback=" +
-      callbackName +
-      "&t=" +
-      Date.now();
-
-
-    document.body.appendChild(
-      script
-    );
-
-
-    function cleanup() {
-
-      clearTimeout(timeout);
-
-      try {
-
-        delete window[callbackName];
-
-      } catch (e) {}
-
-      if (script) {
-
-        script.remove();
-
-      }
-
-    }
-
-  });
+  return await apiRequest(
+    "faces",
+    {},
+    30000
+  );
 
 }
 
 
 /* =====================================================
-   LOAD FACE MODELS
+   GET PHOTO
 ===================================================== */
 
-async function loadModels() {
+async function getFacePhoto(row) {
 
-  setStatus(
-    "LOADING FACE MODEL..."
-  );
-
-
-  await faceapi.nets.tinyFaceDetector.loadFromUri(
-    MODEL_URL
-  );
-
-
-  await faceapi.nets.faceLandmark68TinyNet.loadFromUri(
-    MODEL_URL
-  );
-
-
-  await faceapi.nets.faceRecognitionNet.loadFromUri(
-    MODEL_URL
+  return await apiRequest(
+    "photo",
+    {
+      row: row
+    },
+    30000
   );
 
 }
 
 
 /* =====================================================
-   LOAD PHOTO DATABASE
+   LOAD DATABASE
 ===================================================== */
 
 async function loadDatabase() {
+
+  if (databaseLoaded) {
+
+    return;
+
+  }
+
 
   setStatus(
     "LOADING PHOTO DATABASE..."
@@ -679,11 +677,16 @@ async function loadDatabase() {
     await getFaceDatabase();
 
 
-  if (!data.ok) {
+  if (
+    !data ||
+    !data.ok
+  ) {
 
     throw new Error(
-      data.message ||
-      "FACE DATABASE ERROR"
+      data &&
+      data.message
+        ? data.message
+        : "FACE DATABASE ERROR"
     );
 
   }
@@ -757,7 +760,10 @@ async function loadDatabase() {
         );
 
 
-      if (!photo.ok) {
+      if (
+        !photo ||
+        !photo.ok
+      ) {
 
         continue;
 
@@ -775,11 +781,8 @@ async function loadDatabase() {
           .detectSingleFace(
             image,
             new faceapi.TinyFaceDetectorOptions({
-
               inputSize: 320,
-
               scoreThreshold: 0.5
-
             })
           )
           .withFaceLandmarks(true)
@@ -788,24 +791,25 @@ async function loadDatabase() {
 
       if (!detection) {
 
+        console.log(
+          "FACE TIDAK TERDETEKSI:",
+          employeeId
+        );
+
         continue;
 
       }
 
 
       labeledDescriptors.push(
-
         new faceapi.LabeledFaceDescriptors(
-
           employeeId,
-
           [
             detection.descriptor
           ]
-
         )
-
       );
+
 
     } catch (error) {
 
@@ -838,6 +842,9 @@ async function loadDatabase() {
     );
 
 
+  databaseLoaded = true;
+
+
   databaseInfo.innerText =
     "FACE READY: " +
     labeledDescriptors.length +
@@ -852,198 +859,25 @@ async function loadDatabase() {
 
 
 /* =====================================================
-   GET PHOTO
-===================================================== */
-
-function getFacePhoto(row) {
-
-  return new Promise(function(resolve, reject) {
-
-    const callbackName =
-      "FACE_PHOTO_CALLBACK_" +
-      Date.now();
-
-
-    const script =
-      document.createElement("script");
-
-
-    const timeout =
-      setTimeout(function() {
-
-        cleanup();
-
-        reject(
-          new Error(
-            "PHOTO API TIMEOUT"
-          )
-        );
-
-      }, 30000);
-
-
-    window[callbackName] =
-      function(data) {
-
-        cleanup();
-
-        resolve(data);
-
-      };
-
-
-    script.onerror =
-      function() {
-
-        cleanup();
-
-        reject(
-          new Error(
-            "PHOTO API CONNECTION ERROR"
-          )
-        );
-
-      };
-
-
-    script.src =
-      API_URL +
-      "?action=photo" +
-      "&row=" +
-      encodeURIComponent(row) +
-      "&callback=" +
-      callbackName +
-      "&t=" +
-      Date.now();
-
-
-    document.body.appendChild(
-      script
-    );
-
-
-    function cleanup() {
-
-      clearTimeout(timeout);
-
-      try {
-
-        delete window[callbackName];
-
-      } catch (e) {}
-
-      script.remove();
-
-    }
-
-  });
-
-}
-
-
-/* =====================================================
    SEND SCAN TO GOOGLE SHEET
 ===================================================== */
 
-function sendScanToSheet(
+async function sendScanToSheet(
   employeeId,
   employeeName
 ) {
 
-  return new Promise(function(resolve, reject) {
+  return await apiRequest(
+    "scan",
+    {
+      employeeId:
+        employeeId,
 
-    const callbackName =
-      "FACE_SCAN_CALLBACK_" +
-      Date.now();
-
-
-    const script =
-      document.createElement("script");
-
-
-    const timeout =
-      setTimeout(function() {
-
-        cleanup();
-
-        reject(
-          new Error(
-            "SCAN API TIMEOUT"
-          )
-        );
-
-      }, 15000);
-
-
-    window[callbackName] =
-      function(data) {
-
-        cleanup();
-
-        if (!data) {
-
-          reject(
-            new Error(
-              "SCAN API TIDAK MEMBERIKAN DATA"
-            )
-          );
-
-          return;
-
-        }
-
-        resolve(data);
-
-      };
-
-
-    script.onerror =
-      function() {
-
-        cleanup();
-
-        reject(
-          new Error(
-            "SCAN API CONNECTION ERROR"
-          )
-        );
-
-      };
-
-
-    script.src =
-      API_URL +
-      "?action=scan" +
-      "&employeeId=" +
-      encodeURIComponent(employeeId) +
-      "&employeeName=" +
-      encodeURIComponent(employeeName) +
-      "&callback=" +
-      callbackName +
-      "&t=" +
-      Date.now();
-
-
-    document.body.appendChild(
-      script
-    );
-
-
-    function cleanup() {
-
-      clearTimeout(timeout);
-
-      try {
-
-        delete window[callbackName];
-
-      } catch (e) {}
-
-      script.remove();
-
-    }
-
-  });
+      employeeName:
+        employeeName
+    },
+    15000
+  );
 
 }
 
@@ -1054,19 +888,34 @@ function sendScanToSheet(
 
 async function startCamera() {
 
+  /*
+    Jangan start dua kali.
+  */
+
+  if (scanning) {
+
+    return;
+
+  }
+
+
   try {
 
     setStatus(
-      "BUTTON CLICKED..."
+      "PREPARING CAMERA..."
     );
 
 
-    startButton.disabled =
-      true;
-
+    /*
+      Load model hanya sekali.
+    */
 
     await loadModels();
 
+
+    /*
+      Load database hanya sekali.
+    */
 
     await loadDatabase();
 
@@ -1076,26 +925,44 @@ async function startCamera() {
     );
 
 
+    /*
+      Minta akses kamera.
+    */
+
+    if (
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ) {
+
+      throw new Error(
+        "BROWSER TIDAK MENDUKUNG CAMERA"
+      );
+
+    }
+
+
     cameraStream =
-      await navigator.mediaDevices.getUserMedia({
+      await navigator.mediaDevices
+        .getUserMedia({
 
-        video: {
+          video: {
 
-          facingMode: "user",
+            facingMode:
+              "user",
 
-          width: {
-            ideal: 1280
+            width: {
+              ideal: 1280
+            },
+
+            height: {
+              ideal: 720
+            }
+
           },
 
-          height: {
-            ideal: 720
-          }
+          audio: false
 
-        },
-
-        audio: false
-
-      });
+        });
 
 
     video.srcObject =
@@ -1113,8 +980,14 @@ async function startCamera() {
     await video.play();
 
 
-    scanning =
-      true;
+    scanning = true;
+
+
+    scanLocked = false;
+
+    stableCount = 0;
+
+    lastEmployee = "";
 
 
     setStatus(
@@ -1133,8 +1006,11 @@ async function startCamera() {
     );
 
 
+    scanning = false;
+
+
     setStatus(
-      "ERROR"
+      "CAMERA ERROR"
     );
 
 
@@ -1143,10 +1019,63 @@ async function startCamera() {
       "CAMERA ERROR";
 
 
-    startButton.disabled =
-      false;
+    /*
+      Reset supaya target
+      bisa mencoba lagi.
+    */
+
+    currentTarget = null;
 
   }
+
+}
+
+
+/* =====================================================
+   STOP CAMERA
+===================================================== */
+
+function stopCamera() {
+
+  scanning = false;
+
+
+  if (cameraStream) {
+
+    cameraStream
+      .getTracks()
+      .forEach(
+        function(track) {
+
+          track.stop();
+
+        }
+      );
+
+  }
+
+
+  cameraStream = null;
+
+
+  video.srcObject = null;
+
+
+  video.style.display =
+    "none";
+
+
+  placeholder.style.display =
+    "block";
+
+
+  placeholder.innerText =
+    "WAITING FOR TARGET...";
+
+
+  stableCount = 0;
+
+  lastEmployee = "";
 
 }
 
@@ -1169,21 +1098,19 @@ async function scanFace() {
     const detection =
       await faceapi
         .detectSingleFace(
-
           video,
-
           new faceapi.TinyFaceDetectorOptions({
-
             inputSize: 320,
-
             scoreThreshold: 0.5
-
           })
-
         )
         .withFaceLandmarks(true)
         .withFaceDescriptor();
 
+
+    /*
+      Tidak ada wajah.
+    */
 
     if (!detection) {
 
@@ -1195,12 +1122,9 @@ async function scanFace() {
         "";
 
 
-      lastEmployee =
-        "";
+      stableCount = 0;
 
-
-      stableCount =
-        0;
+      lastEmployee = "";
 
 
       setStatus(
@@ -1218,6 +1142,10 @@ async function scanFace() {
 
     }
 
+
+    /*
+      Cari wajah terbaik.
+    */
 
     const bestMatch =
       faceMatcher.findBestMatch(
@@ -1238,6 +1166,10 @@ async function scanFace() {
       distance.toFixed(4);
 
 
+    /*
+      Tidak cocok.
+    */
+
     if (
       employeeId === "unknown"
     ) {
@@ -1246,12 +1178,9 @@ async function scanFace() {
         "UNKNOWN";
 
 
-      lastEmployee =
-        "";
+      stableCount = 0;
 
-
-      stableCount =
-        0;
+      lastEmployee = "";
 
 
       setStatus(
@@ -1269,6 +1198,10 @@ async function scanFace() {
 
     }
 
+
+    /*
+      Cari nama employee.
+    */
 
     const employee =
       employees.find(
@@ -1290,6 +1223,10 @@ async function scanFace() {
         : "";
 
 
+    /*
+      Stable match.
+    */
+
     if (
       lastEmployee === employeeId
     ) {
@@ -1301,8 +1238,7 @@ async function scanFace() {
       lastEmployee =
         employeeId;
 
-      stableCount =
-        1;
+      stableCount = 1;
 
     }
 
@@ -1321,18 +1257,48 @@ async function scanFace() {
     );
 
 
-    /* =================================================
-       FACE VERIFIED
-    ================================================= */
+    /*
+      =================================================
+      FACE VERIFIED
+      =================================================
+    */
 
     if (
       stableCount >=
-      REQUIRED_STABLE_MATCH &&
+        REQUIRED_STABLE_MATCH &&
       !scanLocked
     ) {
 
-      scanLocked =
-        true;
+      scanLocked = true;
+
+
+      /*
+        Simpan target saat wajah
+        benar-benar diverifikasi.
+      */
+
+      const targetAtScan =
+        currentTarget
+          ? {
+              sheet:
+                currentTarget.sheet,
+
+              row:
+                currentTarget.row,
+
+              column:
+                currentTarget.column
+            }
+          : null;
+
+
+      if (!targetAtScan) {
+
+        scanLocked = false;
+
+        return;
+
+      }
 
 
       setStatus(
@@ -1349,6 +1315,12 @@ async function scanFace() {
 
       try {
 
+        /*
+          Kirim ke FACE API.
+          FACE API membaca _FACE_CONTROL
+          dan mengisi cell target.
+        */
+
         const result =
           await sendScanToSheet(
             employeeId,
@@ -1356,15 +1328,30 @@ async function scanFace() {
           );
 
 
-        if (result.ok) {
+        if (
+          result &&
+          result.ok
+        ) {
 
-          resultBox.innerText =
-            "✓ " +
-            employeeId +
-            " - " +
-            employeeName +
-            "\nTIME IN: " +
-            result.timeIn;
+          if (
+            targetAtScan.column === 1
+          ) {
+
+            resultBox.innerText =
+              "✓ SAVED\n" +
+              employeeId +
+              " - " +
+              employeeName;
+
+          } else {
+
+            resultBox.innerText =
+              "✓ TIME IN SAVED\n" +
+              employeeName +
+              "\n" +
+              result.timeIn;
+
+          }
 
 
           setStatus(
@@ -1372,13 +1359,26 @@ async function scanFace() {
           );
 
 
-          console.log(
-            "SCAN SAVED:",
-            result
-          );
+          /*
+            Kamera berhenti setelah
+            berhasil menyimpan.
+          */
+
+          stopCamera();
+
+
+          /*
+            Jangan proses target yang sama
+            lagi sampai user klik cell baru.
+          */
+
+          currentTarget = null;
 
 
         } else {
+
+          scanLocked = false;
+
 
           setStatus(
             "SHEET ERROR"
@@ -1386,13 +1386,18 @@ async function scanFace() {
 
 
           resultBox.innerText =
-            result.message ||
-            "GAGAL SIMPAN";
+            result &&
+            result.message
+              ? result.message
+              : "GAGAL SIMPAN";
 
         }
 
 
       } catch (error) {
+
+        scanLocked = false;
+
 
         setStatus(
           "SCAN ERROR"
@@ -1412,32 +1417,12 @@ async function scanFace() {
       }
 
 
-      stableCount =
-        0;
+      stableCount = 0;
+
+      lastEmployee = "";
 
 
-      lastEmployee =
-        "";
-
-
-      /*
-        Setelah 5 detik,
-        scanner bisa mengenali orang berikutnya.
-      */
-
-      setTimeout(
-        function() {
-
-          scanLocked =
-            false;
-
-          setStatus(
-            "SCANNING..."
-          );
-
-        },
-        SCAN_COOLDOWN
-      );
+      return;
 
     }
 
@@ -1445,12 +1430,16 @@ async function scanFace() {
   } catch (error) {
 
     console.error(
-      "SCAN ERROR:",
+      "FACE SCAN ERROR:",
       error
     );
 
   }
 
+
+  /*
+    Lanjut scanning.
+  */
 
   if (scanning) {
 
@@ -1462,13 +1451,50 @@ async function scanFace() {
   }
 
 }
-      /* =====================================================
-   AUTO TARGET MONITOR START
+
+
+/* =====================================================
+   MANUAL BUTTON
+   ===================================================== */
+
+startButton.addEventListener(
+  "click",
+  function() {
+
+    if (!scanning) {
+
+      startCamera();
+
+    }
+
+  }
+);
+
+
+/* =====================================================
+   PAGE LOAD
 ===================================================== */
 
 window.addEventListener(
   "load",
   function() {
+
+    setStatus(
+      "WAITING FOR CELL..."
+    );
+
+
+    targetInfo.innerText =
+      "CLICK COLUMN A OR E";
+
+
+    databaseInfo.innerText =
+      "FACE DATABASE NOT LOADED";
+
+
+    /*
+      Mulai monitor target.
+    */
 
     startTargetMonitor();
 
@@ -1478,5 +1504,4 @@ window.addEventListener(
 </script>
 
 </body>
-
 </html>
