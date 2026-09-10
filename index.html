@@ -141,7 +141,7 @@ button:disabled {
 
 <button
   id="startButton"
-  onclick="startCamera()">
+  style="display:none;">
   START CAMERA
 </button>
 
@@ -1462,6 +1462,18 @@ async function scanFace() {
   }
 
 }
+      /* =====================================================
+   AUTO TARGET MONITOR START
+===================================================== */
+
+window.addEventListener(
+  "load",
+  function() {
+
+    startTargetMonitor();
+
+  }
+);
 
 </script>
 
