@@ -146,7 +146,7 @@ button:disabled {
 
 /* =====================================================
    CONFIGURATION
-===================================================== */
+   ===================================================== */
 
 const API_URL =
   "https://script.google.com/macros/s/AKfycbzCtKYN4mfelCDJWXK5c3GUUompPX4Esl8TdLjOlqXYpSjX8dfLdh6sjgMTGTpzaY_mMg/exec";
@@ -164,7 +164,7 @@ const REQUIRED_STABLE_MATCH = 3;
 
 /* =====================================================
    ELEMENT
-===================================================== */
+   ===================================================== */
 
 const video =
   document.getElementById("video");
@@ -193,7 +193,7 @@ const startButton =
 
 /* =====================================================
    VARIABLES
-===================================================== */
+   ===================================================== */
 
 let faceMatcher = null;
 
@@ -222,7 +222,7 @@ let targetMonitor = null;
 
 /* =====================================================
    STATUS
-===================================================== */
+   ===================================================== */
 
 function setStatus(message) {
 
@@ -233,7 +233,7 @@ function setStatus(message) {
 
 /* =====================================================
    JSONP REQUEST
-===================================================== */
+   ===================================================== */
 
 function apiRequest(
   action,
@@ -252,13 +252,10 @@ function apiRequest(
           .toString(36)
           .substring(2);
 
-
       const script =
         document.createElement("script");
 
-
       let finished = false;
-
 
       const timeout =
         setTimeout(
@@ -378,8 +375,143 @@ function apiRequest(
 
 
 /* =====================================================
+   SET TARGET FROM URL
+   ===================================================== */
+
+async function setTargetFromUrl() {
+
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+  const sheet =
+    params.get("sheet");
+
+  const row =
+    params.get("row");
+
+  const column =
+    params.get("column");
+
+
+  if (!sheet || !row || !column) {
+
+    return false;
+
+  }
+
+
+  try {
+
+    setStatus(
+      "SETTING TARGET..."
+    );
+
+
+    const result =
+      await apiRequest(
+        "setTarget",
+        {
+          sheet: sheet,
+          row: row,
+          column: column
+        },
+        15000
+      );
+
+
+    if (
+      !result ||
+      !result.ok
+    ) {
+
+      resultBox.innerText =
+        result &&
+        result.message
+          ? result.message
+          : "GAGAL SET TARGET";
+
+      setStatus(
+        "TARGET ERROR"
+      );
+
+      return false;
+
+    }
+
+
+    const columnNames = {
+
+      1: "A",
+      5: "E",
+      20: "T",
+      24: "X",
+      31: "AE",
+      35: "AI"
+
+    };
+
+
+    const columnName =
+      columnNames[
+        Number(column)
+      ] || "?";
+
+
+    currentTarget = {
+
+      sheet:
+        sheet,
+
+      row:
+        Number(row),
+
+      column:
+        Number(column)
+
+    };
+
+
+    targetInfo.innerText =
+      "TARGET: " +
+      sheet +
+      "!" +
+      columnName +
+      row;
+
+
+    return true;
+
+
+  } catch (error) {
+
+    console.error(
+      "SET TARGET ERROR:",
+      error
+    );
+
+
+    resultBox.innerText =
+      error.message ||
+      "GAGAL SET TARGET";
+
+
+    setStatus(
+      "TARGET ERROR"
+    );
+
+
+    return false;
+
+  }
+
+}
+
+
+/* =====================================================
    GET CURRENT TARGET
-===================================================== */
+   ===================================================== */
 
 async function getCurrentTarget() {
 
@@ -394,7 +526,7 @@ async function getCurrentTarget() {
 
 /* =====================================================
    TARGET CHECK
-===================================================== */
+   ===================================================== */
 
 async function checkTarget() {
 
@@ -428,11 +560,6 @@ async function checkTarget() {
       !data.ready
     ) {
 
-      /*
-        Tidak ada target READY.
-        Kamera tetap mati.
-      */
-
       return;
 
     }
@@ -448,26 +575,29 @@ async function checkTarget() {
 
     }
 
-const allowedFaceColumns = [
-  1,
-  5,
-  20,
-  24,
-  31,
-  35
-];
+
+    const allowedFaceColumns = [
+
+      1,
+      5,
+      20,
+      24,
+      31,
+      35
+
+    ];
 
 
-if (
-  allowedFaceColumns.indexOf(
-    Number(data.column)
-  ) === -1
-) {
+    if (
+      allowedFaceColumns.indexOf(
+        Number(data.column)
+      ) === -1
+    ) {
 
-  return;
+      return;
 
-}
-    
+    }
+
 
     const newKey =
       data.sheet +
@@ -487,18 +617,9 @@ if (
         : "";
 
 
-    /*
-      TARGET BARU
-    */
-
     if (
       newKey !== oldKey
     ) {
-
-      /*
-        Jika kamera sedang bekerja
-        untuk target lama, hentikan.
-      */
 
       if (scanning) {
 
@@ -530,20 +651,20 @@ if (
 
       const columnNames = {
 
-  1: "A",
-  5: "E",
-  20: "T",
-  24: "X",
-  31: "AE",
-  35: "AI"
+        1: "A",
+        5: "E",
+        20: "T",
+        24: "X",
+        31: "AE",
+        35: "AI"
 
-};
+      };
 
 
-const columnName =
-  columnNames[
-    Number(data.column)
-  ] || "?";
+      const columnName =
+        columnNames[
+          Number(data.column)
+        ] || "?";
 
 
       targetInfo.innerText =
@@ -559,13 +680,10 @@ const columnName =
       distanceBox.innerText = "";
 
 
-      /*
-        OTOMATIS START CAMERA
-      */
-
       await startCamera();
 
     }
+
 
   } catch (error) {
 
@@ -585,7 +703,7 @@ const columnName =
 
 /* =====================================================
    START TARGET MONITOR
-===================================================== */
+   ===================================================== */
 
 function startTargetMonitor() {
 
@@ -603,7 +721,7 @@ function startTargetMonitor() {
 
 /* =====================================================
    LOAD MODELS
-===================================================== */
+   ===================================================== */
 
 async function loadModels() {
 
@@ -647,7 +765,7 @@ async function loadModels() {
 
 /* =====================================================
    GET FACE DATABASE
-===================================================== */
+   ===================================================== */
 
 async function getFaceDatabase() {
 
@@ -662,7 +780,7 @@ async function getFaceDatabase() {
 
 /* =====================================================
    GET PHOTO
-===================================================== */
+   ===================================================== */
 
 async function getFacePhoto(row) {
 
@@ -679,7 +797,7 @@ async function getFacePhoto(row) {
 
 /* =====================================================
    LOAD DATABASE
-===================================================== */
+   ===================================================== */
 
 async function loadDatabase() {
 
@@ -882,7 +1000,7 @@ async function loadDatabase() {
 
 /* =====================================================
    SEND SCAN TO GOOGLE SHEET
-===================================================== */
+   ===================================================== */
 
 async function sendScanToSheet(
   employeeId,
@@ -906,13 +1024,9 @@ async function sendScanToSheet(
 
 /* =====================================================
    START CAMERA
-===================================================== */
+   ===================================================== */
 
 async function startCamera() {
-
-  /*
-    Jangan start dua kali.
-  */
 
   if (scanning) {
 
@@ -928,16 +1042,8 @@ async function startCamera() {
     );
 
 
-    /*
-      Load model hanya sekali.
-    */
-
     await loadModels();
 
-
-    /*
-      Load database hanya sekali.
-    */
 
     await loadDatabase();
 
@@ -946,10 +1052,6 @@ async function startCamera() {
       "STARTING CAMERA..."
     );
 
-
-    /*
-      Minta akses kamera.
-    */
 
     if (
       !navigator.mediaDevices ||
@@ -1004,7 +1106,6 @@ async function startCamera() {
 
     scanning = true;
 
-
     scanLocked = false;
 
     stableCount = 0;
@@ -1041,11 +1142,6 @@ async function startCamera() {
       "CAMERA ERROR";
 
 
-    /*
-      Reset supaya target
-      bisa mencoba lagi.
-    */
-
     currentTarget = null;
 
   }
@@ -1055,7 +1151,7 @@ async function startCamera() {
 
 /* =====================================================
    STOP CAMERA
-===================================================== */
+   ===================================================== */
 
 function stopCamera() {
 
@@ -1104,7 +1200,7 @@ function stopCamera() {
 
 /* =====================================================
    FACE SCANNER
-===================================================== */
+   ===================================================== */
 
 async function scanFace() {
 
@@ -1280,9 +1376,7 @@ async function scanFace() {
 
 
     /*
-      =================================================
       FACE VERIFIED
-      =================================================
     */
 
     if (
@@ -1293,11 +1387,6 @@ async function scanFace() {
 
       scanLocked = true;
 
-
-      /*
-        Simpan target saat wajah
-        benar-benar diverifikasi.
-      */
 
       const targetAtScan =
         currentTarget
@@ -1337,12 +1426,6 @@ async function scanFace() {
 
       try {
 
-        /*
-          Kirim ke FACE API.
-          FACE API membaca _FACE_CONTROL
-          dan mengisi cell target.
-        */
-
         const result =
           await sendScanToSheet(
             employeeId,
@@ -1355,15 +1438,12 @@ async function scanFace() {
           result.ok
         ) {
 
-          /*
-            Tentukan jenis scan
-          */
-
           const employeeColumns = [
             1,
             20,
             31
           ];
+
 
           const isEmployeeScan =
             employeeColumns.indexOf(
@@ -1372,10 +1452,6 @@ async function scanFace() {
               )
             ) !== -1;
 
-
-          /*
-            HASIL SCAN
-          */
 
           if (
             isEmployeeScan
@@ -1403,24 +1479,12 @@ async function scanFace() {
           );
 
 
-          /*
-            STOP CAMERA
-          */
-
           stopCamera();
 
-
-          /*
-            TARGET SELESAI
-          */
 
           currentTarget =
             null;
 
-
-          /*
-            RESET
-          */
 
           stableCount =
             0;
@@ -1447,8 +1511,8 @@ async function scanFace() {
               : "GAGAL SIMPAN";
 
         }
-        
-        
+
+
       } catch (error) {
 
         scanLocked = false;
@@ -1525,88 +1589,34 @@ startButton.addEventListener(
   }
 );
 
-  /* =====================================================
-   TARGET DARI URL
-   ===================================================== */
-
-async function setTargetFromUrl() {
-
-  const params = new URLSearchParams(window.location.search);
-
-  const sheet = params.get("sheet");
-  const row = params.get("row");
-  const column = params.get("column");
-
-  if (!sheet || !row || !column) {
-    return false;
-  }
-
-  try {
-
-    const result = await apiRequest(
-      "setTarget",
-      {
-        sheet: sheet,
-        row: row,
-        column: column
-      },
-      15000
-    );
-
-    if (!result || !result.ok) {
-
-      resultBox.innerText =
-        result && result.message
-          ? result.message
-          : "GAGAL SET TARGET";
-
-      return false;
-    }
-
-    return true;
-
-  } catch (error) {
-
-    console.error(
-      "SET TARGET ERROR:",
-      error
-    );
-
-    resultBox.innerText =
-      error.message ||
-      "GAGAL SET TARGET";
-
-    return false;
-  }
-
-}
-
 
 /* =====================================================
    PAGE LOAD
-===================================================== */
+   ===================================================== */
+
 window.addEventListener(
   "load",
   async function() {
 
     setStatus(
-      "WAITING FOR CELL..."
+      "WAITING FOR CAMERA BUTTON..."
     );
+
 
     targetInfo.innerText =
       "WAITING FOR CAMERA BUTTON";
 
+
     databaseInfo.innerText =
       "FACE DATABASE NOT LOADED";
 
+
     /*
-      Jika scanner dibuka dari
-      tombol camera di Google Sheet,
-      ambil target dari URL.
+      Ambil target dari URL.
     */
 
-    const targetFromUrl =
-      await setTargetFromUrl();
+    await setTargetFromUrl();
+
 
     /*
       Mulai monitor target.
@@ -1616,7 +1626,6 @@ window.addEventListener(
 
   }
 );
-
 
 </script>
 
