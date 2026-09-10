@@ -448,16 +448,26 @@ async function checkTarget() {
 
     }
 
+const allowedFaceColumns = [
+  1,
+  5,
+  20,
+  24,
+  31,
+  35
+];
 
-    if (
-      data.column !== 1 &&
-      data.column !== 5
-    ) {
 
-      return;
+if (
+  allowedFaceColumns.indexOf(
+    Number(data.column)
+  ) === -1
+) {
 
-    }
+  return;
 
+}
+    
 
     const newKey =
       data.sheet +
@@ -518,10 +528,22 @@ async function checkTarget() {
       };
 
 
-      const columnName =
-        data.column === 1
-          ? "A"
-          : "E";
+      const columnNames = {
+
+  1: "A",
+  5: "E",
+  20: "T",
+  24: "X",
+  31: "AE",
+  35: "AI"
+
+};
+
+
+const columnName =
+  columnNames[
+    Number(data.column)
+  ] || "?";
 
 
       targetInfo.innerText =
@@ -1333,9 +1355,41 @@ async function scanFace() {
           result.ok
         ) {
 
-          if (
-            targetAtScan.column === 1
-          ) {
+          const employeeColumns = [
+  1,
+  20,
+  31
+];
+
+
+const isEmployeeScan =
+  employeeColumns.indexOf(
+    Number(
+      targetAtScan.column
+    )
+  ) !== -1;
+
+
+if (
+  isEmployeeScan
+) {
+
+  resultBox.innerText =
+    "✓ EMPLOYEE SAVED\n" +
+    employeeId +
+    " - " +
+    employeeName;
+
+} else {
+
+  resultBox.innerText =
+    "✓ TIME IN SAVED\n" +
+    employeeName +
+    "\n" +
+    result.timeIn;
+
+}
+          {
 
             resultBox.innerText =
               "✓ SAVED\n" +
