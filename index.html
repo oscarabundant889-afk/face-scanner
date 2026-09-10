@@ -512,22 +512,18 @@ async function getCurrentTarget() {
 
 }
 
-
 /* =========================================================
-   TARGET MONITOR
+   TARGET CHECK FINAL
    ========================================================= */
 
 async function checkTarget() {
 
-  if (
-    targetChecking
-  ) {
+  if (targetChecking) {
     return;
   }
 
 
-  targetChecking =
-    true;
+  targetChecking = true;
 
 
   try {
@@ -547,17 +543,54 @@ async function checkTarget() {
 
 
     /*
-     * Tidak ada target
+     * =====================================================
+     * TIDAK ADA TARGET READY
+     * =====================================================
      */
 
     if (
       !data.ready
     ) {
 
+      /*
+       * Kalau sebelumnya kamera masih hidup,
+       * matikan.
+       */
+
+      if (scanning) {
+        stopCamera();
+      }
+
+
+      /*
+       * Jangan biarkan target lama
+       * tetap tersimpan.
+       */
+
+      currentTarget = null;
+
+
+      scanLocked = false;
+
+      stableCount = 0;
+
+      lastEmployee = "";
+
+
+      targetInfo.innerText =
+        "WAITING FOR CELL...";
+
+
       return;
 
     }
 
+
+    /*
+     * =====================================================
+     * VALIDASI TARGET
+     * =====================================================
+     */
 
     if (
       !data.sheet ||
@@ -582,9 +615,7 @@ async function checkTarget() {
 
     if (
       allowedColumns.indexOf(
-        Number(
-          data.column
-        )
+        Number(data.column)
       ) === -1
     ) {
 
@@ -593,26 +624,34 @@ async function checkTarget() {
     }
 
 
+    /*
+     * =====================================================
+     * BUAT KEY TARGET
+     * =====================================================
+     */
+
     const newKey =
-      data.sheet +
+      String(data.sheet) +
       "|" +
-      data.row +
+      String(data.row) +
       "|" +
-      data.column;
+      String(data.column);
 
 
     const oldKey =
       currentTarget
-        ? currentTarget.sheet +
+        ? String(currentTarget.sheet) +
           "|" +
-          currentTarget.row +
+          String(currentTarget.row) +
           "|" +
-          currentTarget.column
+          String(currentTarget.column)
         : "";
 
 
     /*
+     * =====================================================
      * TARGET BARU
+     * =====================================================
      */
 
     if (
@@ -621,47 +660,48 @@ async function checkTarget() {
 
 
       /*
-       * Stop kamera lama
+       * Matikan kamera target sebelumnya
        */
 
-      if (
-        scanning
-      ) {
+      if (scanning) {
 
         stopCamera();
 
       }
 
 
-      scanLocked =
-        false;
+      /*
+       * Reset scanner
+       */
+
+      scanLocked = false;
+
+      stableCount = 0;
+
+      lastEmployee = "";
 
 
-      stableCount =
-        0;
-
-
-      lastEmployee =
-        "";
-
+      /*
+       * Simpan target baru
+       */
 
       currentTarget = {
 
         sheet:
-          data.sheet,
+          String(data.sheet),
 
         row:
-          Number(
-            data.row
-          ),
+          Number(data.row),
 
         column:
-          Number(
-            data.column
-          )
+          Number(data.column)
 
       };
 
+
+      /*
+       * Nama kolom
+       */
 
       const columnNames = {
 
@@ -682,11 +722,13 @@ async function checkTarget() {
 
       const columnName =
         columnNames[
-          Number(
-            data.column
-          )
+          Number(data.column)
         ] || "?";
 
+
+      /*
+       * Tampilkan target
+       */
 
       targetInfo.innerText =
         "TARGET: " +
@@ -704,13 +746,16 @@ async function checkTarget() {
         "";
 
 
-      placeholder.innerText =
-        "STARTING CAMERA...";
-
-
       /*
+       * ===================================================
        * AUTO CAMERA
+       * ===================================================
        */
+
+      setStatus(
+        "TARGET DETECTED"
+      );
+
 
       await startCamera();
 
@@ -719,15 +764,14 @@ async function checkTarget() {
 
   } catch (error) {
 
-    console.log(
-      "TARGET ERROR:",
-      error.message
+    console.error(
+      "TARGET CHECK ERROR:",
+      error
     );
 
   } finally {
 
-    targetChecking =
-      false;
+    targetChecking = false;
 
   }
 
