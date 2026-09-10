@@ -1594,39 +1594,41 @@ startButton.addEventListener(
    PAGE LOAD
    ===================================================== */
 
+
 window.addEventListener(
   "load",
   async function() {
 
-    setStatus(
-      "WAITING FOR CAMERA BUTTON..."
-    );
-
+    setStatus("SETTING TARGET...");
 
     targetInfo.innerText =
-      "WAITING FOR CAMERA BUTTON";
-
+      "WAITING FOR TARGET...";
 
     databaseInfo.innerText =
       "FACE DATABASE NOT LOADED";
 
+    const targetReady =
+      await setTargetFromUrl();
 
-    /*
-      Ambil target dari URL.
-    */
+    if (targetReady) {
 
-    await setTargetFromUrl();
+      await startCamera();
 
+      startTargetMonitor();
 
-    /*
-      Mulai monitor target.
-    */
+    } else {
 
-    startTargetMonitor();
+      setStatus("WAITING FOR TARGET...");
+
+      startTargetMonitor();
+
+    }
 
   }
 );
 
+
+  
 </script>
 
 </body>
