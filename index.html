@@ -382,28 +382,23 @@ async function loadModels() {
 /* =====================================================
    LOAD PHOTO DATABASE
 ===================================================== */
-
 async function loadDatabase() {
 
   setStatus(
     "LOADING PHOTO DATABASE..."
   );
 
-
   console.log(
     "REQUESTING FACE DATABASE..."
   );
 
-
   const data =
     await getFaceDatabase();
 
-
   console.log(
-    "FACE API RESPONSE:",
+    "FACE DATABASE:",
     data
   );
-
 
   if (!data.ok) {
 
@@ -414,17 +409,10 @@ async function loadDatabase() {
 
   }
 
-
   employees =
     Array.isArray(data.faces)
       ? data.faces
       : [];
-
-
-  console.log(
-    "TOTAL PHOTO:",
-    employees.length
-  );
 
 
   if (
@@ -446,10 +434,6 @@ async function loadDatabase() {
 
   const labeledDescriptors = [];
 
-
-  /* ===================================================
-     PROCESS EACH EMPLOYEE
-  =================================================== */
 
   for (
     let i = 0;
@@ -474,7 +458,7 @@ async function loadDatabase() {
 
 
     setStatus(
-      "PROCESSING " +
+      "LOADING PHOTO " +
       (i + 1) +
       "/" +
       employees.length +
@@ -486,29 +470,36 @@ async function loadDatabase() {
 
 
     console.log(
-      "PROCESS PHOTO:",
+      "GET PHOTO:",
       employeeId,
       employeeName
     );
 
 
-    if (!employee.image) {
-
-      console.warn(
-        "PHOTO KOSONG:",
-        employeeId
-      );
-
-      continue;
-
-    }
-
-
     try {
+
+      const photo =
+        await getFacePhoto(
+          employee.row
+        );
+
+
+      if (!photo.ok) {
+
+        console.warn(
+          "PHOTO ERROR:",
+          employeeId,
+          photo.message
+        );
+
+        continue;
+
+      }
+
 
       const image =
         await faceapi.fetchImage(
-          employee.image
+          photo.image
         );
 
 
@@ -569,7 +560,7 @@ async function loadDatabase() {
     } catch (error) {
 
       console.error(
-        "PHOTO ERROR:",
+        "PHOTO PROCESS ERROR:",
         employeeId,
         error
       );
@@ -578,10 +569,6 @@ async function loadDatabase() {
 
   }
 
-
-  /* ===================================================
-     CHECK DATABASE
-  =================================================== */
 
   if (
     labeledDescriptors.length === 0
@@ -593,10 +580,6 @@ async function loadDatabase() {
 
   }
 
-
-  /* ===================================================
-     CREATE FACE MATCHER
-  =================================================== */
 
   faceMatcher =
     new faceapi.FaceMatcher(
@@ -623,444 +606,89 @@ async function loadDatabase() {
     "FACE DATABASE READY"
   );
 
-
-  console.log(
-    "TOTAL FACE READY:",
-    labeledDescriptors.length
-  );
-
 }
 
+      function getFacePhoto(row) {
 
-/* =====================================================
-   START CAMERA
-===================================================== */
+  return new Promise(function(resolve, reject) {
 
-async function startCamera() {
-
-  try {
-
-    startButton.disabled =
-      true;
+    const callbackName =
+      "FACE_PHOTO_CALLBACK_" +
+      Date.now();
 
 
-    resultBox.innerText =
-      "";
+    const script =
+      document.createElement("script");
 
 
-    distanceBox.innerText =
-      "";
+    const timeout =
+      setTimeout(function() {
+
+        cleanup();
+
+        reject(
+          new Error(
+            "PHOTO API TIMEOUT"
+          )
+        );
+
+      }, 30000);
 
 
-    /* STEP 1 */
+    window[callbackName] =
+      function(data) {
 
-    await loadModels();
+        cleanup();
+
+        resolve(data);
+
+      };
 
 
-    /* STEP 2 */
+    script.onerror =
+      function() {
 
-    await loadDatabase();
+        cleanup();
+
+        reject(
+          new Error(
+            "PHOTO API CONNECTION ERROR"
+          )
+        );
+
+      };
 
 
-    /* STEP 3 */
+    script.src =
+      API_URL +
+      "?action=photo" +
+      "&row=" +
+      encodeURIComponent(row) +
+      "&callback=" +
+      callbackName +
+      "&t=" +
+      Date.now();
 
-    setStatus(
-      "STARTING CAMERA..."
+
+    document.body.appendChild(
+      script
     );
 
 
-    if (
-      !navigator.mediaDevices ||
-      !navigator.mediaDevices.getUserMedia
-    ) {
+    function cleanup() {
 
-      throw new Error(
-        "BROWSER TIDAK MENDUKUNG CAMERA"
-      );
+      clearTimeout(timeout);
+
+      try {
+
+        delete window[callbackName];
+
+      } catch (e) {}
+
+      script.remove();
 
     }
 
-
-    cameraStream =
-      await navigator.mediaDevices.getUserMedia({
-
-        video: {
-
-          facingMode: "user",
-
-          width: {
-            ideal: 1280
-          },
-
-          height: {
-            ideal: 720
-          }
-
-        },
-
-        audio: false
-
-      });
-
-
-    video.srcObject =
-      cameraStream;
-
-
-    video.style.display =
-      "block";
-
-
-    placeholder.style.display =
-      "none";
-
-
-    await video.play();
-
-
-    scanning =
-      true;
-
-
-    setStatus(
-      "CAMERA READY - LOOK AT CAMERA"
-    );
-
-
-    startButton.innerText =
-      "CAMERA RUNNING";
-
-
-    scanFace();
-
-
-  } catch (error) {
-
-    console.error(
-      "START CAMERA ERROR:",
-      error
-    );
-
-
-    setStatus(
-      "ERROR"
-    );
-
-
-    resultBox.innerText =
-      error.message ||
-      "UNKNOWN ERROR";
-
-
-    startButton.disabled =
-      false;
-
-  }
+  });
 
 }
-
-
-/* =====================================================
-   SCAN FACE
-===================================================== */
-
-async function scanFace() {
-
-  if (!scanning) {
-
-    return;
-
-  }
-
-
-  try {
-
-    if (
-      video.readyState < 2
-    ) {
-
-      requestAnimationFrame(
-        scanFace
-      );
-
-      return;
-
-    }
-
-
-    const detection =
-      await faceapi
-        .detectSingleFace(
-
-          video,
-
-          new faceapi.TinyFaceDetectorOptions({
-
-            inputSize: 320,
-
-            scoreThreshold: 0.6
-
-          })
-
-        )
-        .withFaceLandmarks(true)
-        .withFaceDescriptor();
-
-
-    /* NO FACE */
-
-    if (!detection) {
-
-      lastEmployee =
-        "";
-
-      stableCount =
-        0;
-
-
-      setStatus(
-        "NO FACE DETECTED"
-      );
-
-
-      resultBox.innerText =
-        "";
-
-
-      distanceBox.innerText =
-        "";
-
-
-      requestAnimationFrame(
-        scanFace
-      );
-
-
-      return;
-
-    }
-
-
-    /* FIND MATCH */
-
-    const match =
-      faceMatcher.findBestMatch(
-        detection.descriptor
-      );
-
-
-    console.log(
-      "FACE MATCH:",
-      match.label,
-      "| DISTANCE:",
-      match.distance
-    );
-
-
-    /* UNKNOWN */
-
-    if (
-      match.label === "unknown"
-    ) {
-
-      lastEmployee =
-        "";
-
-      stableCount =
-        0;
-
-
-      setStatus(
-        "FACE NOT RECOGNIZED"
-      );
-
-
-      resultBox.innerText =
-        "UNKNOWN";
-
-
-      distanceBox.innerText =
-        "Distance: " +
-        match.distance.toFixed(3);
-
-
-      requestAnimationFrame(
-        scanFace
-      );
-
-
-      return;
-
-    }
-
-
-    /* FIND EMPLOYEE */
-
-    const employee =
-      employees.find(
-
-        function(item) {
-
-          return String(
-            item.employeeId
-          ).trim() ===
-          String(
-            match.label
-          ).trim();
-
-        }
-
-      );
-
-
-    if (!employee) {
-
-      lastEmployee =
-        "";
-
-      stableCount =
-        0;
-
-
-      setStatus(
-        "EMPLOYEE DATABASE ERROR"
-      );
-
-
-      resultBox.innerText =
-        match.label;
-
-
-      requestAnimationFrame(
-        scanFace
-      );
-
-
-      return;
-
-    }
-
-
-    /* STABLE MATCH */
-
-    if (
-      match.label ===
-      lastEmployee
-    ) {
-
-      stableCount++;
-
-    } else {
-
-      lastEmployee =
-        match.label;
-
-      stableCount =
-        1;
-
-    }
-
-
-    setStatus(
-      "MATCHING..."
-    );
-
-
-    resultBox.innerText =
-      employee.employeeId +
-      " - " +
-      employee.name;
-
-
-    distanceBox.innerText =
-      "Distance: " +
-      match.distance.toFixed(3) +
-      " | Stable: " +
-      stableCount +
-      "/" +
-      REQUIRED_STABLE_MATCH;
-
-
-    /* CONFIRMED */
-
-    if (
-      stableCount >=
-      REQUIRED_STABLE_MATCH
-    ) {
-
-      setStatus(
-        "✅ FACE MATCH"
-      );
-
-
-      resultBox.innerText =
-        employee.employeeId +
-        " - " +
-        employee.name;
-
-
-      distanceBox.innerText =
-        "MATCH CONFIRMED | Distance: " +
-        match.distance.toFixed(3);
-
-
-      console.log(
-        "FACE MATCH CONFIRMED"
-      );
-
-
-      console.log(
-        "EMPLOYEE ID:",
-        employee.employeeId
-      );
-
-
-      console.log(
-        "NAME:",
-        employee.name
-      );
-
-
-      console.log(
-        "DISTANCE:",
-        match.distance
-      );
-
-
-      stableCount =
-        REQUIRED_STABLE_MATCH;
-
-    }
-
-
-  } catch (error) {
-
-    console.error(
-      "SCAN ERROR:",
-      error
-    );
-
-  }
-
-
-  requestAnimationFrame(
-    scanFace
-  );
-
-}
-
-
-/* =====================================================
-   BUTTON
-===================================================== */
-
-startButton.addEventListener(
-  "click",
-  startCamera
-);
-
-</script>
-
-</body>
-
-</html>
