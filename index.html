@@ -1525,27 +1525,88 @@ startButton.addEventListener(
   }
 );
 
+  /* =====================================================
+   TARGET DARI URL
+   ===================================================== */
+
+async function setTargetFromUrl() {
+
+  const params = new URLSearchParams(window.location.search);
+
+  const sheet = params.get("sheet");
+  const row = params.get("row");
+  const column = params.get("column");
+
+  if (!sheet || !row || !column) {
+    return false;
+  }
+
+  try {
+
+    const result = await apiRequest(
+      "setTarget",
+      {
+        sheet: sheet,
+        row: row,
+        column: column
+      },
+      15000
+    );
+
+    if (!result || !result.ok) {
+
+      resultBox.innerText =
+        result && result.message
+          ? result.message
+          : "GAGAL SET TARGET";
+
+      return false;
+    }
+
+    return true;
+
+  } catch (error) {
+
+    console.error(
+      "SET TARGET ERROR:",
+      error
+    );
+
+    resultBox.innerText =
+      error.message ||
+      "GAGAL SET TARGET";
+
+    return false;
+  }
+
+}
+
 
 /* =====================================================
    PAGE LOAD
 ===================================================== */
-
 window.addEventListener(
   "load",
-  function() {
+  async function() {
 
     setStatus(
       "WAITING FOR CELL..."
     );
 
-
     targetInfo.innerText =
-      "CLICK COLUMN A OR E";
-
+      "WAITING FOR CAMERA BUTTON";
 
     databaseInfo.innerText =
       "FACE DATABASE NOT LOADED";
 
+    /*
+      Jika scanner dibuka dari
+      tombol camera di Google Sheet,
+      ambil target dari URL.
+    */
+
+    const targetFromUrl =
+      await setTargetFromUrl();
 
     /*
       Mulai monitor target.
@@ -1555,6 +1616,7 @@ window.addEventListener(
 
   }
 );
+
 
 </script>
 
