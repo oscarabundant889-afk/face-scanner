@@ -1355,44 +1355,34 @@ async function scanFace() {
           result.ok
         ) {
 
+          /*
+            Tentukan jenis scan
+          */
+
           const employeeColumns = [
-  1,
-  20,
-  31
-];
+            1,
+            20,
+            31
+          ];
+
+          const isEmployeeScan =
+            employeeColumns.indexOf(
+              Number(
+                targetAtScan.column
+              )
+            ) !== -1;
 
 
-const isEmployeeScan =
-  employeeColumns.indexOf(
-    Number(
-      targetAtScan.column
-    )
-  ) !== -1;
+          /*
+            HASIL SCAN
+          */
 
-
-if (
-  isEmployeeScan
-) {
-
-  resultBox.innerText =
-    "✓ EMPLOYEE SAVED\n" +
-    employeeId +
-    " - " +
-    employeeName;
-
-} else {
-
-  resultBox.innerText =
-    "✓ TIME IN SAVED\n" +
-    employeeName +
-    "\n" +
-    result.timeIn;
-
-}
-          {
+          if (
+            isEmployeeScan
+          ) {
 
             resultBox.innerText =
-              "✓ SAVED\n" +
+              "✓ EMPLOYEE SAVED\n" +
               employeeId +
               " - " +
               employeeName;
@@ -1414,24 +1404,35 @@ if (
 
 
           /*
-            Kamera berhenti setelah
-            berhasil menyimpan.
+            STOP CAMERA
           */
 
           stopCamera();
 
 
           /*
-            Jangan proses target yang sama
-            lagi sampai user klik cell baru.
+            TARGET SELESAI
           */
 
-          currentTarget = null;
+          currentTarget =
+            null;
+
+
+          /*
+            RESET
+          */
+
+          stableCount =
+            0;
+
+          lastEmployee =
+            "";
 
 
         } else {
 
-          scanLocked = false;
+          scanLocked =
+            false;
 
 
           setStatus(
@@ -1446,8 +1447,8 @@ if (
               : "GAGAL SIMPAN";
 
         }
-
-
+        
+        
       } catch (error) {
 
         scanLocked = false;
