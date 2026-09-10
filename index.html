@@ -139,9 +139,12 @@ button:disabled {
 </div>
 
 
-<button id="startButton" onclick="startCamera()">
+<button
+  id="startButton"
+  onclick="startCamera()">
   START CAMERA
 </button>
+
 
 <script>
 
@@ -161,6 +164,14 @@ const MATCH_THRESHOLD = 0.50;
 
 
 const REQUIRED_STABLE_MATCH = 3;
+
+
+/*
+   Jeda setelah berhasil scan.
+   Mencegah orang yang sama tercatat berkali-kali.
+*/
+
+const SCAN_COOLDOWN = 5000;
 
 
 /* =====================================================
@@ -211,6 +222,8 @@ let lastEmployee = "";
 
 let stableCount = 0;
 
+let scanLocked = false;
+
 
 /* =====================================================
    STATUS
@@ -218,14 +231,14 @@ let stableCount = 0;
 
 function setStatus(message) {
 
-  statusBox.innerText = message;
+  statusBox.innerText =
+    message;
 
 }
 
 
 /* =====================================================
-   GET DATABASE
-   JSONP
+   GET FACE DATABASE
 ===================================================== */
 
 function getFaceDatabase() {
@@ -236,10 +249,8 @@ function getFaceDatabase() {
       "FACE_DATABASE_CALLBACK_" +
       Date.now();
 
-
     const script =
       document.createElement("script");
-
 
     const timeout =
       setTimeout(function() {
@@ -269,8 +280,8 @@ function getFaceDatabase() {
           );
 
           return;
-        }
 
+        }
 
         resolve(data);
 
@@ -309,13 +320,11 @@ function getFaceDatabase() {
 
       clearTimeout(timeout);
 
-
       try {
 
         delete window[callbackName];
 
       } catch (e) {}
-
 
       if (script) {
 
@@ -341,18 +350,8 @@ async function loadModels() {
   );
 
 
-  console.log(
-    "Loading Tiny Face Detector..."
-  );
-
-
   await faceapi.nets.tinyFaceDetector.loadFromUri(
     MODEL_URL
-  );
-
-
-  console.log(
-    "Loading Face Landmark..."
   );
 
 
@@ -361,18 +360,8 @@ async function loadModels() {
   );
 
 
-  console.log(
-    "Loading Face Recognition..."
-  );
-
-
   await faceapi.nets.faceRecognitionNet.loadFromUri(
     MODEL_URL
-  );
-
-
-  console.log(
-    "ALL FACE MODELS READY"
   );
 
 }
@@ -381,23 +370,17 @@ async function loadModels() {
 /* =====================================================
    LOAD PHOTO DATABASE
 ===================================================== */
+
 async function loadDatabase() {
 
   setStatus(
     "LOADING PHOTO DATABASE..."
   );
 
-  console.log(
-    "REQUESTING FACE DATABASE..."
-  );
 
   const data =
     await getFaceDatabase();
 
-  console.log(
-    "FACE DATABASE:",
-    data
-  );
 
   if (!data.ok) {
 
@@ -407,6 +390,7 @@ async function loadDatabase() {
     );
 
   }
+
 
   employees =
     Array.isArray(data.faces)
@@ -468,13 +452,6 @@ async function loadDatabase() {
     );
 
 
-    console.log(
-      "GET PHOTO:",
-      employeeId,
-      employeeName
-    );
-
-
     try {
 
       const photo =
@@ -484,12 +461,6 @@ async function loadDatabase() {
 
 
       if (!photo.ok) {
-
-        console.warn(
-          "PHOTO ERROR:",
-          employeeId,
-          photo.message
-        );
 
         continue;
 
@@ -505,9 +476,7 @@ async function loadDatabase() {
       const detection =
         await faceapi
           .detectSingleFace(
-
             image,
-
             new faceapi.TinyFaceDetectorOptions({
 
               inputSize: 320,
@@ -515,19 +484,12 @@ async function loadDatabase() {
               scoreThreshold: 0.5
 
             })
-
           )
           .withFaceLandmarks(true)
           .withFaceDescriptor();
 
 
       if (!detection) {
-
-        console.warn(
-          "FACE TIDAK DITEMUKAN:",
-          employeeId,
-          employeeName
-        );
 
         continue;
 
@@ -547,14 +509,6 @@ async function loadDatabase() {
         )
 
       );
-
-
-      console.log(
-        "FACE READY:",
-        employeeId,
-        employeeName
-      );
-
 
     } catch (error) {
 
@@ -582,11 +536,8 @@ async function loadDatabase() {
 
   faceMatcher =
     new faceapi.FaceMatcher(
-
       labeledDescriptors,
-
       MATCH_THRESHOLD
-
     );
 
 
@@ -600,14 +551,14 @@ async function loadDatabase() {
     "DATABASE READY"
   );
 
-
-  console.log(
-    "FACE DATABASE READY"
-  );
-
 }
 
-      function getFacePhoto(row) {
+
+/* =====================================================
+   GET PHOTO
+===================================================== */
+
+function getFacePhoto(row) {
 
   return new Promise(function(resolve, reject) {
 
@@ -693,11 +644,14 @@ async function loadDatabase() {
 }
 
 
-     /* =====================================================
-   SEND FACE RESULT TO GOOGLE SHEET
+/* =====================================================
+   SEND SCAN TO GOOGLE SHEET
 ===================================================== */
 
-function sendScanToSheet(employeeId, employeeName) {
+function sendScanToSheet(
+  employeeId,
+  employeeName
+) {
 
   return new Promise(function(resolve, reject) {
 
@@ -705,8 +659,10 @@ function sendScanToSheet(employeeId, employeeName) {
       "FACE_SCAN_CALLBACK_" +
       Date.now();
 
+
     const script =
       document.createElement("script");
+
 
     const timeout =
       setTimeout(function() {
@@ -714,10 +670,13 @@ function sendScanToSheet(employeeId, employeeName) {
         cleanup();
 
         reject(
-          new Error("SCAN API TIMEOUT")
+          new Error(
+            "SCAN API TIMEOUT"
+          )
         );
 
       }, 15000);
+
 
     window[callbackName] =
       function(data) {
@@ -740,6 +699,7 @@ function sendScanToSheet(employeeId, employeeName) {
 
       };
 
+
     script.onerror =
       function() {
 
@@ -753,6 +713,7 @@ function sendScanToSheet(employeeId, employeeName) {
 
       };
 
+
     script.src =
       API_URL +
       "?action=scan" +
@@ -765,7 +726,11 @@ function sendScanToSheet(employeeId, employeeName) {
       "&t=" +
       Date.now();
 
-    document.body.appendChild(script);
+
+    document.body.appendChild(
+      script
+    );
+
 
     function cleanup() {
 
@@ -783,7 +748,7 @@ function sendScanToSheet(employeeId, employeeName) {
 
   });
 
-} 
+}
 
 
 /* =====================================================
@@ -794,31 +759,41 @@ async function startCamera() {
 
   try {
 
-    setStatus("BUTTON CLICKED...");
+    setStatus(
+      "BUTTON CLICKED..."
+    );
 
-    startButton.disabled = true;
 
-    setStatus("LOADING FACE MODEL...");
+    startButton.disabled =
+      true;
+
 
     await loadModels();
 
-    setStatus("LOADING FACE DATABASE...");
 
     await loadDatabase();
 
-    setStatus("STARTING CAMERA...");
+
+    setStatus(
+      "STARTING CAMERA..."
+    );
+
 
     cameraStream =
       await navigator.mediaDevices.getUserMedia({
 
         video: {
+
           facingMode: "user",
+
           width: {
             ideal: 1280
           },
+
           height: {
             ideal: 720
           }
+
         },
 
         audio: false
@@ -841,9 +816,14 @@ async function startCamera() {
     await video.play();
 
 
-    scanning = true;
+    scanning =
+      true;
 
-    setStatus("SCANNING...");
+
+    setStatus(
+      "SCANNING..."
+    );
+
 
     scanFace();
 
@@ -881,7 +861,9 @@ async function startCamera() {
 async function scanFace() {
 
   if (!scanning) {
+
     return;
+
   }
 
 
@@ -911,23 +893,29 @@ async function scanFace() {
       resultBox.innerText =
         "NO FACE";
 
+
       distanceBox.innerText =
         "";
+
 
       lastEmployee =
         "";
 
+
       stableCount =
         0;
+
 
       setStatus(
         "SCANNING..."
       );
 
+
       setTimeout(
         scanFace,
         300
       );
+
 
       return;
 
@@ -960,11 +948,14 @@ async function scanFace() {
       resultBox.innerText =
         "UNKNOWN";
 
+
       lastEmployee =
         "";
 
+
       stableCount =
         0;
+
 
       setStatus(
         "FACE NOT MATCHED"
@@ -975,6 +966,7 @@ async function scanFace() {
         scanFace,
         300
       );
+
 
       return;
 
@@ -1031,76 +1023,128 @@ async function scanFace() {
       REQUIRED_STABLE_MATCH
     );
 
-if (
-  stableCount >=
-  REQUIRED_STABLE_MATCH
-) {
 
-  setStatus(
-    "FACE VERIFIED"
-  );
+    /* =================================================
+       FACE VERIFIED
+    ================================================= */
 
-  resultBox.innerText =
-    "✓ " +
-    employeeId +
-    " - " +
-    employeeName;
+    if (
+      stableCount >=
+      REQUIRED_STABLE_MATCH &&
+      !scanLocked
+    ) {
 
-  try {
+      scanLocked =
+        true;
 
-    const result =
-      await sendScanToSheet(
-        employeeId,
-        employeeName
+
+      setStatus(
+        "FACE VERIFIED"
       );
 
-    if (result.ok) {
 
       resultBox.innerText =
         "✓ " +
         employeeId +
         " - " +
-        employeeName +
-        "\nTIME IN: " +
-        result.timeIn;
+        employeeName;
 
-      setStatus(
-        "SCAN SAVED"
+
+      try {
+
+        const result =
+          await sendScanToSheet(
+            employeeId,
+            employeeName
+          );
+
+
+        if (result.ok) {
+
+          resultBox.innerText =
+            "✓ " +
+            employeeId +
+            " - " +
+            employeeName +
+            "\nTIME IN: " +
+            result.timeIn;
+
+
+          setStatus(
+            "SCAN SAVED"
+          );
+
+
+          console.log(
+            "SCAN SAVED:",
+            result
+          );
+
+
+        } else {
+
+          setStatus(
+            "SHEET ERROR"
+          );
+
+
+          resultBox.innerText =
+            result.message ||
+            "GAGAL SIMPAN";
+
+        }
+
+
+      } catch (error) {
+
+        setStatus(
+          "SCAN ERROR"
+        );
+
+
+        resultBox.innerText =
+          error.message ||
+          "GAGAL SIMPAN";
+
+
+        console.error(
+          "SAVE ERROR:",
+          error
+        );
+
+      }
+
+
+      stableCount =
+        0;
+
+
+      lastEmployee =
+        "";
+
+
+      /*
+        Setelah 5 detik,
+        scanner bisa mengenali orang berikutnya.
+      */
+
+      setTimeout(
+        function() {
+
+          scanLocked =
+            false;
+
+          setStatus(
+            "SCANNING..."
+          );
+
+        },
+        SCAN_COOLDOWN
       );
-
-      console.log(
-        "SCAN SAVED:",
-        result
-      );
-
-    } else {
-
-      setStatus(
-        "SHEET ERROR"
-      );
-
-      resultBox.innerText =
-        result.message;
 
     }
 
-  } catch (error) {
 
-    setStatus(
-      "SCAN ERROR"
-    );
-
-    resultBox.innerText =
-      error.message;
-
-  }
-
-  stableCount = 0;
-
-  lastEmployee = "";
-
-}
-    
   } catch (error) {
 
     console.error(
@@ -1122,9 +1166,6 @@ if (
 
 }
 
-
-
-      
 </script>
 
 </body>
