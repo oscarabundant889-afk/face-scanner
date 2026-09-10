@@ -139,10 +139,9 @@ button:disabled {
 </div>
 
 
-<button id="startButton">
+<button id="startButton" onclick="startCamera()">
   START CAMERA
 </button>
-
 
 <script>
 
@@ -703,6 +702,8 @@ async function startCamera() {
 
   try {
 
+    setStatus("BUTTON CLICKED...");
+
     startButton.disabled = true;
 
     setStatus("LOADING FACE MODEL...");
@@ -987,14 +988,7 @@ async function scanFace() {
 }
 
 
-/* =====================================================
-   BUTTON
-===================================================== */
 
-startButton.addEventListener(
-  "click",
-  startCamera
-);
       
 </script>
 
