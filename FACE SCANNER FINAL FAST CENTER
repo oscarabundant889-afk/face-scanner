@@ -656,7 +656,7 @@ let employees =
 let cameraStream =
   null;
 
-
+let scanTimer = null;
 let scanning =
   false;
 
