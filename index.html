@@ -24,200 +24,114 @@
   box-sizing: border-box;
 }
 
-
 body {
-
   margin: 0;
-
   padding: 0;
-
   background: #111;
-
   color: white;
-
   font-family: Arial, sans-serif;
-
   text-align: center;
-
 }
-
 
 h1 {
-
-  margin:
-    25px 0 20px;
-
+  margin: 25px 0 20px;
   font-size: 40px;
-
 }
-
 
 #cameraBox {
-
   width: 90%;
-
   max-width: 900px;
-
   margin: auto;
-
   background: #222;
-
   border-radius: 15px;
-
   overflow: hidden;
-
   min-height: 500px;
-
   display: flex;
-
   align-items: center;
-
   justify-content: center;
-
 }
-
 
 #video {
-
   width: 100%;
-
   display: none;
-
-  transform:
-    scaleX(-1);
-
+  transform: scaleX(-1);
 }
-
 
 #placeholder {
-
   font-size: 30px;
-
   color: #aaa;
-
-  padding:
-    100px 20px;
-
+  padding: 100px 20px;
 }
-
 
 #status {
-
   margin-top: 25px;
-
-  font-size: 28px;
-
+  font-size: 30px;
   font-weight: bold;
-
 }
-
 
 #result {
-
   margin-top: 15px;
-
   font-size: 34px;
-
   font-weight: bold;
-
-  min-height: 50px;
-
-  white-space:
-    pre-line;
-
+  min-height: 60px;
+  white-space: pre-line;
 }
-
 
 #distance {
-
   margin-top: 10px;
-
-  font-size: 18px;
-
+  font-size: 20px;
   color: #aaa;
-
 }
-
 
 #targetInfo {
-
   margin-top: 15px;
-
-  font-size: 22px;
-
+  font-size: 23px;
   color: #aaa;
-
 }
-
 
 #databaseInfo {
-
   margin-top: 10px;
-
-  font-size: 18px;
-
+  font-size: 19px;
   color: #aaa;
-
 }
 
+#warning {
+  width: 90%;
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #222;
+  border-radius: 12px;
+  font-size: 28px;
+  font-weight: bold;
+  display: none;
+}
 
 #checklist {
-
   width: 90%;
-
   max-width: 900px;
-
-  margin:
-    25px auto;
-
+  margin: 25px auto;
   text-align: left;
-
   background: #222;
-
   border-radius: 12px;
-
   overflow: hidden;
-
 }
-
 
 .checkRow {
-
   display: grid;
-
-  grid-template-columns:
-    220px 1fr;
-
-  border-bottom:
-    1px solid #444;
-
+  grid-template-columns: 230px 1fr;
+  border-bottom: 1px solid #444;
 }
-
 
 .checkLabel {
-
   padding: 12px;
-
   font-weight: bold;
-
   background: #292929;
-
 }
-
 
 .checkValue {
-
   padding: 12px;
-
   color: #ddd;
-
-}
-
-
-#startButton {
-
-  display: none;
-
 }
 
 </style>
@@ -237,7 +151,6 @@ h1 {
     WAITING FOR TARGET...
   </div>
 
-
   <video
     id="video"
     autoplay
@@ -256,6 +169,9 @@ h1 {
 <div id="result"></div>
 
 
+<div id="warning"></div>
+
+
 <div id="distance"></div>
 
 
@@ -272,94 +188,110 @@ h1 {
 <div id="checklist">
 
   <div class="checkRow">
+
     <div class="checkLabel">
       EMPLOYEE NO
     </div>
+
     <div
       class="checkValue"
       id="checkEmployee">
       NOT YET
     </div>
+
   </div>
 
 
   <div class="checkRow">
+
     <div class="checkLabel">
       NAME
     </div>
+
     <div
       class="checkValue"
       id="checkName">
       NOT YET
     </div>
+
   </div>
 
 
   <div class="checkRow">
+
     <div class="checkLabel">
       TIME OUT
     </div>
+
     <div
       class="checkValue"
       id="checkTimeout">
       NOT YET
     </div>
+
   </div>
 
 
   <div class="checkRow">
+
     <div class="checkLabel">
       SYSTEM TIME OUT
     </div>
+
     <div
       class="checkValue"
       id="checkTimeoutStamp">
       NOT YET
     </div>
+
   </div>
 
 
   <div class="checkRow">
+
     <div class="checkLabel">
       TIME IN
     </div>
+
     <div
       class="checkValue"
       id="checkTimeIn">
       NOT YET
     </div>
+
   </div>
 
 
   <div class="checkRow">
+
     <div class="checkLabel">
       SYSTEM TIME IN
     </div>
+
     <div
       class="checkValue"
       id="checkTimeInStamp">
       NOT YET
     </div>
+
   </div>
 
 
   <div class="checkRow">
+
     <div class="checkLabel">
       REMARK
     </div>
+
     <div
       class="checkValue"
       id="checkRemark">
       NOT YET
     </div>
+
   </div>
 
 </div>
-
-
-<button id="startButton">
-  START CAMERA
-</button>
 
 
 <script>
@@ -402,6 +334,14 @@ const TARGET_CHECK_INTERVAL =
 
 const SCAN_INTERVAL =
   250;
+
+
+/*
+ * Warning tetap tampil 5 detik.
+ */
+
+const WARNING_TIME =
+  5000;
 
 
 /* =========================================================
@@ -449,6 +389,12 @@ const statusBox =
 const resultBox =
   document.getElementById(
     "result"
+  );
+
+
+const warningBox =
+  document.getElementById(
+    "warning"
   );
 
 
@@ -522,6 +468,10 @@ let preloadPromise =
   null;
 
 
+let warningTimer =
+  null;
+
+
 /* =========================================================
    STATUS
    ========================================================= */
@@ -532,6 +482,46 @@ function setStatus(
 
   statusBox.innerText =
     message;
+
+}
+
+
+/* =========================================================
+   WARNING
+   5 SECOND
+   ========================================================= */
+
+function showWarning(
+  message
+) {
+
+  clearTimeout(
+    warningTimer
+  );
+
+
+  warningBox.innerText =
+    message;
+
+
+  warningBox.style.display =
+    "block";
+
+
+  /*
+   * Warning terlihat 5 detik.
+   */
+
+  warningTimer =
+    setTimeout(
+      function() {
+
+        warningBox.style.display =
+          "none";
+
+      },
+      WARNING_TIME
+    );
 
 }
 
@@ -779,7 +769,7 @@ function apiRequest(
 
 
 /* =========================================================
-   INDEXEDDB
+   INDEXED DB
    ========================================================= */
 
 function openCache() {
@@ -1220,9 +1210,11 @@ function buildMatcher(
               ),
 
               [
+
                 new Float32Array(
                   item.descriptor
                 )
+
               ]
 
             )
@@ -1260,7 +1252,7 @@ function buildMatcher(
 
 
 /* =========================================================
-   BUILD FACE CACHE
+   BUILD CACHE
    ========================================================= */
 
 async function buildFaceCache(
@@ -1440,7 +1432,8 @@ async function buildFaceCache(
 
 
   if (
-    descriptors.length === 0
+    descriptors.length ===
+    0
   ) {
 
     throw new Error(
@@ -1457,10 +1450,6 @@ async function buildFaceCache(
 
   await clearCache();
 
-
-  /*
-   * Save batches.
-   */
 
   for (
     let i = 0;
@@ -1619,7 +1608,7 @@ async function loadDatabase() {
 
 
   /*
-   * Existing valid cache.
+   * CACHE VALID
    */
 
   if (
@@ -1662,7 +1651,7 @@ async function loadDatabase() {
 
 
   /*
-   * No valid cache.
+   * BUILD NEW CACHE
    */
 
   await buildFaceCache(
@@ -1752,6 +1741,422 @@ async function getCurrentTarget() {
 
 
 /* =========================================================
+   TIME PARSER
+   ========================================================= */
+
+function timeToMinutes(
+  value
+) {
+
+  if (!value) {
+    return null;
+  }
+
+
+  const text =
+    String(
+      value
+    ).trim();
+
+
+  /*
+   * Accept:
+   *
+   * HH:mm
+   * HH/mm
+   */
+
+  const parts =
+    text.split(
+      /[:/]/
+    );
+
+
+  if (
+    parts.length < 2
+  ) {
+
+    return null;
+
+  }
+
+
+  const hour =
+    Number(
+      parts[0]
+    );
+
+
+  const minute =
+    Number(
+      parts[1]
+    );
+
+
+  if (
+    !Number.isFinite(hour) ||
+    !Number.isFinite(minute) ||
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59
+  ) {
+
+    return null;
+
+  }
+
+
+  return (
+    hour * 60 +
+    minute
+  );
+
+}
+
+
+/* =========================================================
+   TIME DIFFERENCE
+   CROSS MIDNIGHT SAFE
+   ========================================================= */
+
+function timeDifferenceMinutes(
+  first,
+  second
+) {
+
+  const a =
+    timeToMinutes(
+      first
+    );
+
+
+  const b =
+    timeToMinutes(
+      second
+    );
+
+
+  if (
+    a === null ||
+    b === null
+  ) {
+
+    return null;
+
+  }
+
+
+  let difference =
+    b - a;
+
+
+  /*
+   * Cross midnight.
+   */
+
+  if (
+    difference < 0
+  ) {
+
+    difference +=
+      24 * 60;
+
+  }
+
+
+  return difference;
+
+}
+
+
+/* =========================================================
+   CHECK TIME GAP
+   ========================================================= */
+
+function validateTimeGap(
+  target,
+  checklist
+) {
+
+  if (!checklist) {
+
+    return {
+
+      ok: true
+
+    };
+
+  }
+
+
+  const column =
+    Number(
+      target.column
+    );
+
+
+  /*
+   * GROUP 1
+   *
+   * D and F
+   */
+
+  if (
+    column === 5
+  ) {
+
+    const timeOut =
+      checklist.systemTimeOut;
+
+
+    const timeIn =
+      checklist.systemTimeIn;
+
+
+    /*
+     * F belum ada karena
+     * memang sedang akan diisi.
+     *
+     * Jadi kita gunakan
+     * current system time.
+     */
+
+    if (
+      timeOut &&
+      timeOut !== "NOT YET"
+    ) {
+
+      const now =
+        new Date();
+
+
+      const currentMinutes =
+        now.getHours() * 60 +
+        now.getMinutes();
+
+
+      const outMinutes =
+        timeToMinutes(
+          timeOut
+        );
+
+
+      if (
+        outMinutes !== null
+      ) {
+
+        let difference =
+          currentMinutes -
+          outMinutes;
+
+
+        if (
+          difference < 0
+        ) {
+
+          difference +=
+            24 * 60;
+
+        }
+
+
+        /*
+         * 1 menit atau kurang
+         * TIDAK BOLEH SCAN.
+         */
+
+        if (
+          difference <= 1
+        ) {
+
+          return {
+
+            ok: false,
+
+            message:
+              "TIME IN NOT ALLOWED\n\n" +
+              "TIME OUT and TIME IN must be more than 1 minute apart."
+
+          };
+
+        }
+
+      }
+
+    }
+
+  }
+
+
+  /*
+   * GROUP 2
+   *
+   * V and X
+   */
+
+  if (
+    column === 24
+  ) {
+
+    const timeOut =
+      checklist.timeOut;
+
+
+    /*
+     * X belum ada.
+     * Bandingkan V dengan
+     * current time.
+     */
+
+    if (
+      timeOut &&
+      timeOut !== "NOT YET"
+    ) {
+
+      const now =
+        new Date();
+
+
+      const currentMinutes =
+        now.getHours() * 60 +
+        now.getMinutes();
+
+
+      const outMinutes =
+        timeToMinutes(
+          timeOut
+        );
+
+
+      if (
+        outMinutes !== null
+      ) {
+
+        let difference =
+          currentMinutes -
+          outMinutes;
+
+
+        if (
+          difference < 0
+        ) {
+
+          difference +=
+            24 * 60;
+
+        }
+
+
+        if (
+          difference <= 1
+        ) {
+
+          return {
+
+            ok: false,
+
+            message:
+              "TIME IN NOT ALLOWED\n\n" +
+              "TIME OUT and TIME IN must be more than 1 minute apart."
+
+          };
+
+        }
+
+      }
+
+    }
+
+  }
+
+
+  /*
+   * GROUP 3
+   *
+   * AG and AI
+   */
+
+  if (
+    column === 35
+  ) {
+
+    const timeOut =
+      checklist.timeOut;
+
+
+    if (
+      timeOut &&
+      timeOut !== "NOT YET"
+    ) {
+
+      const now =
+        new Date();
+
+
+      const currentMinutes =
+        now.getHours() * 60 +
+        now.getMinutes();
+
+
+      const outMinutes =
+        timeToMinutes(
+          timeOut
+        );
+
+
+      if (
+        outMinutes !== null
+      ) {
+
+        let difference =
+          currentMinutes -
+          outMinutes;
+
+
+        if (
+          difference < 0
+        ) {
+
+          difference +=
+            24 * 60;
+
+        }
+
+
+        if (
+          difference <= 1
+        ) {
+
+          return {
+
+            ok: false,
+
+            message:
+              "TIME IN NOT ALLOWED\n\n" +
+              "TIME OUT and TIME IN must be more than 1 minute apart."
+
+          };
+
+        }
+
+      }
+
+    }
+
+  }
+
+
+  return {
+
+    ok: true
+
+  };
+
+}
+
+
+/* =========================================================
    CHECK TARGET
    ========================================================= */
 
@@ -1782,11 +2187,6 @@ async function checkTarget() {
     }
 
 
-    /*
-     * If target is not READY,
-     * show checklist if available.
-     */
-
     if (
       data.checklist
     ) {
@@ -1798,47 +2198,59 @@ async function checkTarget() {
     }
 
 
+    /*
+     * TARGET NOT READY
+     */
 
-/* =====================================================
-   TARGET TIDAK READY
-   ===================================================== */
+    if (
+      !data.ready
+    ) {
 
-if (!data.ready) {
+      /*
+       * If the previous target
+       * has already been scanned,
+       * turn camera OFF.
+       */
 
-  /*
-   * Jika target sebelumnya sudah selesai
-   * atau status sudah SCANNED,
-   * langsung matikan camera.
-   */
+      if (
+        currentTarget &&
+        data.sheet ===
+          currentTarget.sheet &&
+        Number(data.row) ===
+          Number(currentTarget.row) &&
+        Number(data.column) ===
+          Number(currentTarget.column)
+      ) {
 
-  if (
-    currentTarget &&
-    data.sheet === currentTarget.sheet &&
-    Number(data.row) === Number(currentTarget.row) &&
-    Number(data.column) === Number(currentTarget.column)
-  ) {
+        stopCamera();
 
-    stopCamera();
 
-    currentTarget = null;
+        currentTarget =
+          null;
 
-    scanLocked = false;
 
-    stableCount = 0;
+        scanLocked =
+          false;
 
-    lastEmployee = "";
 
-    setStatus(
-      "SCAN COMPLETED"
-    );
+        stableCount =
+          0;
 
-  }
 
-  return;
+        lastEmployee =
+          "";
 
-}
 
-    
+        setStatus(
+          "SCAN COMPLETED"
+        );
+
+      }
+
+
+      return;
+
+    }
 
 
     if (
@@ -1896,6 +2308,10 @@ if (!data.ready) {
 
         : "";
 
+
+    /*
+     * NEW TARGET
+     */
 
     if (
       newKey !==
@@ -1965,7 +2381,46 @@ if (!data.ready) {
 
 
       /*
-       * AUTOMATIC CAMERA
+       * =================================================
+       * PRE-SCAN VALIDATION
+       * =================================================
+       */
+
+      const validation =
+        validateBeforeCamera(
+          currentTarget,
+          data.checklist
+        );
+
+
+      if (
+        !validation.ok
+      ) {
+
+        showWarning(
+          validation.message
+        );
+
+
+        setStatus(
+          "ACTION REQUIRED"
+        );
+
+
+        /*
+         * Camera MUST NOT start.
+         */
+
+        stopCamera();
+
+
+        return;
+
+      }
+
+
+      /*
+       * CAMERA AUTOMATICALLY STARTS
        */
 
       await startCamera();
@@ -1986,6 +2441,148 @@ if (!data.ready) {
       false;
 
   }
+
+}
+
+
+/* =========================================================
+   PRE-SCAN VALIDATION
+   ========================================================= */
+
+function validateBeforeCamera(
+  target,
+  checklist
+) {
+
+  if (!target) {
+
+    return {
+
+      ok: false,
+
+      message:
+        "TARGET NOT READY"
+
+    };
+
+  }
+
+
+  const column =
+    Number(
+      target.column
+    );
+
+
+  /*
+   * ================================================
+   * E
+   *
+   * G REMARK REQUIRED
+   * ================================================
+   */
+
+  if (
+    column === 5
+  ) {
+
+    const remark =
+      checklist
+        ? String(
+            checklist.remark ||
+            ""
+          ).trim()
+        : "";
+
+
+    if (
+      !remark ||
+      remark === "NOT YET"
+    ) {
+
+      return {
+
+        ok: false,
+
+        message:
+          "REMARK REQUIRED\n\n" +
+          "Please enter Remark in column G before scanning Time In."
+
+      };
+
+    }
+
+  }
+
+
+  /*
+   * ================================================
+   * AI
+   *
+   * AK REMARK REQUIRED
+   * ================================================
+   */
+
+  if (
+    column === 35
+  ) {
+
+    const remark =
+      checklist
+        ? String(
+            checklist.remark ||
+            ""
+          ).trim()
+        : "";
+
+
+    if (
+      !remark ||
+      remark === "NOT YET"
+    ) {
+
+      return {
+
+        ok: false,
+
+        message:
+          "REMARK REQUIRED\n\n" +
+          "Please enter Remark in column AK before scanning Time In."
+
+      };
+
+    }
+
+  }
+
+
+  /*
+   * ================================================
+   * TIME GAP
+   * ================================================
+   */
+
+  const timeValidation =
+    validateTimeGap(
+      target,
+      checklist
+    );
+
+
+  if (
+    !timeValidation.ok
+  ) {
+
+    return timeValidation;
+
+  }
+
+
+  return {
+
+    ok: true
+
+  };
 
 }
 
@@ -2050,11 +2647,6 @@ async function startCamera() {
 
   try {
 
-    /*
-     * If cache already exists,
-     * this returns very quickly.
-     */
-
     await preloadFaceSystem();
 
 
@@ -2070,7 +2662,7 @@ async function startCamera() {
     ) {
 
       throw new Error(
-        "BROWSER TIDAK MENDUKUNG CAMERA"
+        "BROWSER DOES NOT SUPPORT CAMERA"
       );
 
     }
@@ -2225,6 +2817,7 @@ function stopCamera() {
   lastEmployee =
     "";
 
+
 }
 
 
@@ -2239,13 +2832,18 @@ async function scanFace() {
   }
 
 
+  /*
+   * SAFETY:
+   * No target = no camera.
+   */
+
   if (!currentTarget) {
 
-  stopCamera();
+    stopCamera();
 
-  return;
+    return;
 
-}
+  }
 
 
   try {
@@ -2292,9 +2890,9 @@ async function scanFace() {
         .withFaceDescriptor();
 
 
-    /* =====================================================
-       NO FACE
-       ===================================================== */
+    /*
+     * NO FACE
+     */
 
     if (!detection) {
 
@@ -2330,9 +2928,9 @@ async function scanFace() {
     }
 
 
-    /* =====================================================
-       MATCH
-       ===================================================== */
+    /*
+     * MATCH
+     */
 
     const bestMatch =
       faceMatcher.findBestMatch(
@@ -2353,9 +2951,9 @@ async function scanFace() {
       distance.toFixed(4);
 
 
-    /* =====================================================
-       UNKNOWN
-       ===================================================== */
+    /*
+     * NOT MATCHED
+     */
 
     if (
       employeeId ===
@@ -2390,9 +2988,9 @@ async function scanFace() {
     }
 
 
-    /* =====================================================
-       FIND EMPLOYEE
-       ===================================================== */
+    /*
+     * FIND EMPLOYEE
+     */
 
     const employee =
       employees.find(
@@ -2414,9 +3012,9 @@ async function scanFace() {
         : "";
 
 
-    /* =====================================================
-       STABLE MATCH
-       ===================================================== */
+    /*
+     * STABLE MATCH
+     */
 
     if (
       lastEmployee ===
@@ -2450,9 +3048,9 @@ async function scanFace() {
     );
 
 
-    /* =====================================================
-       VERIFIED
-       ===================================================== */
+    /*
+     * VERIFIED
+     */
 
     if (
       stableCount >=
@@ -2472,6 +3070,165 @@ async function scanFace() {
 
         scanLocked =
           false;
+
+
+        stopCamera();
+
+
+        return;
+
+      }
+
+
+      /*
+       * CHECK AGAIN BEFORE SAVING.
+       *
+       * This protects against
+       * a changed cell while camera
+       * is running.
+       */
+
+      try {
+
+        const latestTarget =
+          await getCurrentTarget();
+
+
+        if (
+          !latestTarget ||
+          !latestTarget.ready
+        ) {
+
+          scanLocked =
+            false;
+
+
+          showWarning(
+            "TARGET NOT READY"
+          );
+
+
+          setStatus(
+            "TARGET NOT READY"
+          );
+
+
+          stopCamera();
+
+
+          currentTarget =
+            null;
+
+
+          return;
+
+        }
+
+
+        const latestChecklist =
+          latestTarget.checklist;
+
+
+        if (
+          latestChecklist
+        ) {
+
+          updateChecklist(
+            latestChecklist
+          );
+
+        }
+
+
+        const validation =
+          validateBeforeCamera(
+            target,
+            latestChecklist
+          );
+
+
+        if (
+          !validation.ok
+        ) {
+
+          scanLocked =
+            false;
+
+
+          showWarning(
+            validation.message
+          );
+
+
+          setStatus(
+            "ACTION REQUIRED"
+          );
+
+
+          stableCount =
+            0;
+
+
+          lastEmployee =
+            "";
+
+
+          /*
+           * Camera remains ON so
+           * employee can read warning.
+           *
+           * It will stay visible for
+           * 5 seconds.
+           */
+
+          setTimeout(
+            function() {
+
+              if (scanning) {
+
+                scanFace();
+
+              }
+
+            },
+            WARNING_TIME
+          );
+
+
+          return;
+
+        }
+
+
+      } catch (validationError) {
+
+        scanLocked =
+          false;
+
+
+        showWarning(
+          "TARGET CHECK ERROR"
+        );
+
+
+        setStatus(
+          "TARGET CHECK ERROR"
+        );
+
+
+        setTimeout(
+          function() {
+
+            if (scanning) {
+
+              scanFace();
+
+            }
+
+          },
+          WARNING_TIME
+        );
+
 
         return;
 
@@ -2496,7 +3253,7 @@ async function scanFace() {
 
 
         /*
-         * Update checklist first.
+         * Update checklist.
          */
 
         if (
@@ -2572,7 +3329,7 @@ async function scanFace() {
 
 
           /*
-           * CAMERA OFF
+           * CAMERA OFF.
            */
 
           stopCamera();
@@ -2607,7 +3364,7 @@ async function scanFace() {
           "";
 
 
-        resultBox.innerText =
+        const rejectionMessage =
           result &&
           (
             result.message ||
@@ -2620,28 +3377,37 @@ async function scanFace() {
             : "SCAN REJECTED";
 
 
+        resultBox.innerText =
+          rejectionMessage;
+
+
+        showWarning(
+          rejectionMessage
+        );
+
+
         setStatus(
           "SCAN REJECTED"
         );
 
 
         /*
-         * Keep camera ON.
-         *
-         * This is important for:
-         * Remark missing
-         * Face mismatch
-         * etc.
+         * Camera stays ON.
+         * Warning remains 5 sec.
          */
 
-        if (scanning) {
+        setTimeout(
+          function() {
 
-          setTimeout(
-            scanFace,
-            700
-          );
+            if (scanning) {
 
-        }
+              scanFace();
+
+            }
+
+          },
+          WARNING_TIME
+        );
 
 
         return;
@@ -2671,20 +3437,24 @@ async function scanFace() {
           "SCAN ERROR";
 
 
-        console.error(
-          "SAVE ERROR:",
-          error
+        showWarning(
+          error.message ||
+          "SCAN ERROR"
         );
 
 
-        if (scanning) {
+        setTimeout(
+          function() {
 
-          setTimeout(
-            scanFace,
-            700
-          );
+            if (scanning) {
 
-        }
+              scanFace();
+
+            }
+
+          },
+          WARNING_TIME
+        );
 
 
         return;
@@ -2714,48 +3484,6 @@ async function scanFace() {
   }
 
 }
-
-
-/* =========================================================
-   MANUAL CACHE RESET
-   ========================================================= */
-
-window.clearFaceScannerCache =
-  async function() {
-
-    await clearCache();
-
-
-    localStorage.removeItem(
-      CACHE_SIGNATURE
-    );
-
-
-    databaseLoaded =
-      false;
-
-
-    faceMatcher =
-      null;
-
-
-    employees =
-      [];
-
-
-    preloadPromise =
-      null;
-
-
-    databaseInfo.innerText =
-      "CACHE CLEARED";
-
-
-    setStatus(
-      "CACHE CLEARED - RELOAD PAGE"
-    );
-
-  };
 
 
 /* =========================================================
@@ -2799,6 +3527,48 @@ function columnToLetter(
 
 
 /* =========================================================
+   CLEAR CACHE
+   ========================================================= */
+
+window.clearFaceScannerCache =
+  async function() {
+
+    await clearCache();
+
+
+    localStorage.removeItem(
+      CACHE_SIGNATURE
+    );
+
+
+    databaseLoaded =
+      false;
+
+
+    faceMatcher =
+      null;
+
+
+    employees =
+      [];
+
+
+    preloadPromise =
+      null;
+
+
+    databaseInfo.innerText =
+      "CACHE CLEARED";
+
+
+    setStatus(
+      "CACHE CLEARED - RELOAD PAGE"
+    );
+
+  };
+
+
+/* =========================================================
    PAGE LOAD
    ========================================================= */
 
@@ -2820,13 +3590,7 @@ window.addEventListener(
 
 
     /*
-     * PRELOAD:
-     *
-     * Models
-     * +
-     * cached descriptors
-     *
-     * start immediately.
+     * PRELOAD MODEL + CACHE
      */
 
     preloadFaceSystem()
@@ -2843,7 +3607,7 @@ window.addEventListener(
 
 
     /*
-     * Monitor Google Sheet.
+     * MONITOR SHEET
      */
 
     startTargetMonitor();
