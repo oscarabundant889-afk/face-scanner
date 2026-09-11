@@ -59,41 +59,6 @@ h1{
   display:none
 }
 
-#cameraMessage{
-  display:none;
-  position:absolute;
-  left:12px;
-  right:12px;
-  top:50%;
-  transform:translateY(-50%);
-  text-align:center;
-  z-index:10;
-  padding:15px 10px;
-  background:rgba(20,20,20,.96);
-  border-radius:10px;
-}
-
-#cameraMessageTitle{
-  font-size:18px;
-  font-weight:bold;
-  margin-bottom:10px;
-}
-
-#cameraMessageText{
-  font-size:15px;
-  line-height:1.4;
-  color:#ddd;
-}
-
-#cameraBox.message #cameraMessage{
-  display:block;
-}
-
-#cameraBox.message #placeholder{
-  display:none;
-}
-
-  
 #centerGuide{
   position:absolute;
   width:150px;
@@ -193,19 +158,8 @@ h1{
     WAITING FOR TARGET...
   </div>
 
-  <div id="cameraMessage">
-    <div id="cameraMessageTitle">
-      REMARK REQUIRED
-    </div>
-    <div id="cameraMessageText">
-      Please enter a Remark or Room before scanning Time In.
-    </div>
-  </div>
-
   <video
-  
-  
-  id="video"
+    id="video"
     autoplay
     muted
     playsinline>
@@ -439,11 +393,6 @@ const placeholder =
   document.getElementById(
     "placeholder"
   );
-const cameraMessage =
-  document.getElementById(
-    "cameraMessage"
-  );
-  
 
 
 const statusBox =
@@ -597,37 +546,6 @@ function showWarning(
       );
 
   }
-
-}
-
-
-  function showCameraMessage(
-  title,
-  message
-) {
-
-  cameraBox.classList.add(
-    "message"
-  );
-
-  document.getElementById(
-    "cameraMessageTitle"
-  ).innerText =
-    title || "";
-
-  document.getElementById(
-    "cameraMessageText"
-  ).innerText =
-    message || "";
-
-}
-
-
-function hideCameraMessage() {
-
-  cameraBox.classList.remove(
-    "message"
-  );
 
 }
 
@@ -2052,15 +1970,18 @@ function timeToMinutes(
 /* =========================================================
    TIME GAP
    ========================================================= */
+
 function validateTimeGap(
   target,
   checklist
 ) {
 
   if (!checklist) {
+
     return {
       ok: true
     };
+
   }
 
 
@@ -2070,18 +1991,11 @@ function validateTimeGap(
     );
 
 
-  /*
-     E  → C
-     X  → V
-     AI → AG
-
-     Hanya Time In yang dicek.
-  */
-
   if (
-    ![5, 24, 35].includes(
-      column
-    )
+    ![5,24,35]
+      .includes(
+        column
+      )
   ) {
 
     return {
@@ -2092,27 +2006,20 @@ function validateTimeGap(
 
 
   /*
-     Ambil TIME OUT dari:
-
-     E → C
-     X → V
-     AI → AG
-
-     BUKAN System Time Out D/W/AH.
+     Group 1 = E
+     Group 2 = X
+     Group 3 = AI
   */
 
   const timeOut =
+    checklist.systemTimeOut ||
     checklist.timeOut;
 
 
-  /*
-     Kalau Time Out belum ada,
-     langsung boleh lanjut.
-  */
-
   if (
     !timeOut ||
-    timeOut === "NOT YET"
+    timeOut ===
+      "NOT YET"
   ) {
 
     return {
@@ -2129,7 +2036,8 @@ function validateTimeGap(
 
 
   if (
-    outMinutes === null
+    outMinutes ===
+    null
   ) {
 
     return {
@@ -2139,26 +2047,15 @@ function validateTimeGap(
   }
 
 
-  /*
-     Waktu sekarang
-  */
-
   const now =
     new Date();
 
 
-  const nowMinutes =
-    now.getHours() * 60 +
-    now.getMinutes();
-
-
-  /*
-     Hitung selisih.
-     Mendukung lewat tengah malam.
-  */
-
   let difference =
-    nowMinutes -
+    (
+      now.getHours() * 60 +
+      now.getMinutes()
+    ) -
     outMinutes;
 
 
@@ -2172,11 +2069,6 @@ function validateTimeGap(
   }
 
 
-  /*
-     SELISIH 1 MENIT ATAU KURANG
-     → TIDAK BOLEH SCAN
-  */
-
   if (
     difference <= 1
   ) {
@@ -2187,23 +2079,19 @@ function validateTimeGap(
 
       message:
         "TIME IN NOT ALLOWED\n\n" +
-        "Time In must be more than 1 minute after Time Out."
+        "TIME OUT and TIME IN must be more than 1 minute apart."
 
     };
 
   }
 
 
-  /*
-     Lebih dari 1 menit
-     → BOLEH SCAN
-  */
-
   return {
     ok: true
   };
 
 }
+
 
 /* =========================================================
    VALIDATE BEFORE CAMERA
@@ -2217,8 +2105,12 @@ function validateBeforeCamera(
   if (!target) {
 
     return {
-      ok:false,
-      message:"TARGET NOT READY"
+
+      ok: false,
+
+      message:
+        "TARGET NOT READY"
+
     };
 
   }
@@ -2231,12 +2123,12 @@ function validateBeforeCamera(
 
 
   /*
-   =====================================================
-   E → CHECK G
-   =====================================================
+     E → Remark G wajib
   */
 
-  if (column === 5) {
+  if (
+    column === 5
+  ) {
 
     const remark =
       checklist
@@ -2251,21 +2143,17 @@ function validateBeforeCamera(
 
     if (
       !remark ||
-      remark === "NOT YET"
+      remark ===
+        "NOT YET"
     ) {
-
-      showCameraMessage(
-        "⚠ REMARK REQUIRED",
-        "Please enter Remark / Room in column G first.\n\nThen click Time In again."
-      );
-
 
       return {
 
-        ok:false,
+        ok: false,
 
         message:
-          "Please enter Remark / Room in column G first."
+          "REMARK REQUIRED\n\n" +
+          "Please enter Remark in column G before scanning Time In."
 
       };
 
@@ -2275,12 +2163,12 @@ function validateBeforeCamera(
 
 
   /*
-   =====================================================
-   AI → CHECK AK
-   =====================================================
+     AI → Remark AK wajib
   */
 
-  if (column === 35) {
+  if (
+    column === 35
+  ) {
 
     const remark =
       checklist
@@ -2295,21 +2183,17 @@ function validateBeforeCamera(
 
     if (
       !remark ||
-      remark === "NOT YET"
+      remark ===
+        "NOT YET"
     ) {
-
-      showCameraMessage(
-        "⚠ REMARK REQUIRED",
-        "Please enter Remark / Room in column AK first.\n\nThen click Time In again."
-      );
-
 
       return {
 
-        ok:false,
+        ok: false,
 
         message:
-          "Please enter Remark / Room in column AK first."
+          "REMARK REQUIRED\n\n" +
+          "Please enter Remark in column AK before scanning Time In."
 
       };
 
@@ -2317,12 +2201,6 @@ function validateBeforeCamera(
 
   }
 
-
-  /*
-   =====================================================
-   TIME GAP
-   =====================================================
-  */
 
   return validateTimeGap(
     target,
@@ -2330,7 +2208,7 @@ function validateBeforeCamera(
   );
 
 }
-  
+
 
 /* =========================================================
    TARGET CHECK
@@ -2471,9 +2349,20 @@ async function checkTarget() {
         : "";
 
 
+    /*
+       TARGET SAMA
+       → jangan restart camera
+    */
 
-jangan restart camera
-    
+    if (
+      newKey ===
+      oldKey
+    ) {
+
+      return;
+
+    }
+
 
     /*
        TARGET BARU
@@ -2578,44 +2467,14 @@ jangan restart camera
 
     await startCamera();
 
+  } catch (error) {
 
-} catch (error) {
-
-  console.error(
-    "TARGET CHECK ERROR:",
-    error.message
-  );
-
-  /*
-     Friendly message untuk Time In
-     jika Remark / Room belum diisi.
-  */
-
-  if (
-    currentTarget &&
-    [5, 35].includes(
-      Number(currentTarget.column)
-    )
-  ) {
-
-    setStatus(
-      "ACTION REQUIRED"
+    console.log(
+      "TARGET CHECK ERROR:",
+      error.message
     );
 
-    showWarning(
-      "Please enter a Remark or Room before scanning Time In."
-    );
-
-    stopCamera();
-
-    return;
-
-  }
-
-}
-
-    
-   finally {
+  } finally {
 
     targetChecking =
       false;
