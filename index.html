@@ -1213,10 +1213,8 @@ async function preloadFaceSystem() {
          Model dan database dimulai bersamaan.
       */
 
-      await Promise.all([
-        loadModels(),
-        loadDatabase()
-      ]);
+      await loadModels();
+await loadDatabase();
 
 
       setStatus(
