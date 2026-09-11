@@ -1970,18 +1970,15 @@ function timeToMinutes(
 /* =========================================================
    TIME GAP
    ========================================================= */
-
 function validateTimeGap(
   target,
   checklist
 ) {
 
   if (!checklist) {
-
     return {
       ok: true
     };
-
   }
 
 
@@ -1991,11 +1988,18 @@ function validateTimeGap(
     );
 
 
+  /*
+     E  → C
+     X  → V
+     AI → AG
+
+     Hanya Time In yang dicek.
+  */
+
   if (
-    ![5,24,35]
-      .includes(
-        column
-      )
+    ![5, 24, 35].includes(
+      column
+    )
   ) {
 
     return {
@@ -2006,20 +2010,27 @@ function validateTimeGap(
 
 
   /*
-     Group 1 = E
-     Group 2 = X
-     Group 3 = AI
+     Ambil TIME OUT dari:
+
+     E → C
+     X → V
+     AI → AG
+
+     BUKAN System Time Out D/W/AH.
   */
 
   const timeOut =
-    checklist.systemTimeOut ||
     checklist.timeOut;
 
 
+  /*
+     Kalau Time Out belum ada,
+     langsung boleh lanjut.
+  */
+
   if (
     !timeOut ||
-    timeOut ===
-      "NOT YET"
+    timeOut === "NOT YET"
   ) {
 
     return {
@@ -2036,8 +2047,7 @@ function validateTimeGap(
 
 
   if (
-    outMinutes ===
-    null
+    outMinutes === null
   ) {
 
     return {
@@ -2047,15 +2057,26 @@ function validateTimeGap(
   }
 
 
+  /*
+     Waktu sekarang
+  */
+
   const now =
     new Date();
 
 
+  const nowMinutes =
+    now.getHours() * 60 +
+    now.getMinutes();
+
+
+  /*
+     Hitung selisih.
+     Mendukung lewat tengah malam.
+  */
+
   let difference =
-    (
-      now.getHours() * 60 +
-      now.getMinutes()
-    ) -
+    nowMinutes -
     outMinutes;
 
 
@@ -2069,6 +2090,11 @@ function validateTimeGap(
   }
 
 
+  /*
+     SELISIH 1 MENIT ATAU KURANG
+     → TIDAK BOLEH SCAN
+  */
+
   if (
     difference <= 1
   ) {
@@ -2079,19 +2105,23 @@ function validateTimeGap(
 
       message:
         "TIME IN NOT ALLOWED\n\n" +
-        "TIME OUT and TIME IN must be more than 1 minute apart."
+        "Time In must be more than 1 minute after Time Out."
 
     };
 
   }
 
 
+  /*
+     Lebih dari 1 menit
+     → BOLEH SCAN
+  */
+
   return {
     ok: true
   };
 
 }
-
 
 /* =========================================================
    VALIDATE BEFORE CAMERA
