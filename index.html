@@ -2232,7 +2232,7 @@ function validateBeforeCamera(
 
   /*
    =====================================================
-   E → REMARK / ROOM DI G
+   E → CHECK G
    =====================================================
   */
 
@@ -2255,8 +2255,8 @@ function validateBeforeCamera(
     ) {
 
       showCameraMessage(
-        "REMARK REQUIRED",
-        "Please enter a Remark or Room before scanning Time In."
+        "⚠ REMARK REQUIRED",
+        "Please enter Remark / Room in column G first.\n\nThen click Time In again."
       );
 
 
@@ -2265,7 +2265,7 @@ function validateBeforeCamera(
         ok:false,
 
         message:
-          "Please enter a Remark or Room before scanning Time In."
+          "Please enter Remark / Room in column G first."
 
       };
 
@@ -2276,7 +2276,7 @@ function validateBeforeCamera(
 
   /*
    =====================================================
-   AI → REMARK / ROOM DI AK
+   AI → CHECK AK
    =====================================================
   */
 
@@ -2299,8 +2299,8 @@ function validateBeforeCamera(
     ) {
 
       showCameraMessage(
-        "REMARK REQUIRED",
-        "Please enter a Remark or Room before scanning Time In."
+        "⚠ REMARK REQUIRED",
+        "Please enter Remark / Room in column AK first.\n\nThen click Time In again."
       );
 
 
@@ -2309,7 +2309,7 @@ function validateBeforeCamera(
         ok:false,
 
         message:
-          "Please enter a Remark or Room before scanning Time In."
+          "Please enter Remark / Room in column AK first."
 
       };
 
@@ -2330,7 +2330,6 @@ function validateBeforeCamera(
   );
 
 }
-
   
 
 /* =========================================================
