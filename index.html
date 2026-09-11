@@ -59,6 +59,41 @@ h1{
   display:none
 }
 
+#cameraMessage{
+  display:none;
+  position:absolute;
+  left:12px;
+  right:12px;
+  top:50%;
+  transform:translateY(-50%);
+  text-align:center;
+  z-index:10;
+  padding:15px 10px;
+  background:rgba(20,20,20,.96);
+  border-radius:10px;
+}
+
+#cameraMessageTitle{
+  font-size:18px;
+  font-weight:bold;
+  margin-bottom:10px;
+}
+
+#cameraMessageText{
+  font-size:15px;
+  line-height:1.4;
+  color:#ddd;
+}
+
+#cameraBox.message #cameraMessage{
+  display:block;
+}
+
+#cameraBox.message #placeholder{
+  display:none;
+}
+
+  
 #centerGuide{
   position:absolute;
   width:150px;
@@ -158,8 +193,19 @@ h1{
     WAITING FOR TARGET...
   </div>
 
+  <div id="cameraMessage">
+    <div id="cameraMessageTitle">
+      REMARK REQUIRED
+    </div>
+    <div id="cameraMessageText">
+      Please enter a Remark or Room before scanning Time In.
+    </div>
+  </div>
+
   <video
-    id="video"
+  
+  
+  id="video"
     autoplay
     muted
     playsinline>
@@ -393,6 +439,11 @@ const placeholder =
   document.getElementById(
     "placeholder"
   );
+const cameraMessage =
+  document.getElementById(
+    "cameraMessage"
+  );
+  
 
 
 const statusBox =
@@ -546,6 +597,37 @@ function showWarning(
       );
 
   }
+
+}
+
+
+  function showCameraMessage(
+  title,
+  message
+) {
+
+  cameraBox.classList.add(
+    "message"
+  );
+
+  document.getElementById(
+    "cameraMessageTitle"
+  ).innerText =
+    title || "";
+
+  document.getElementById(
+    "cameraMessageText"
+  ).innerText =
+    message || "";
+
+}
+
+
+function hideCameraMessage() {
+
+  cameraBox.classList.remove(
+    "message"
+  );
 
 }
 
@@ -2135,12 +2217,8 @@ function validateBeforeCamera(
   if (!target) {
 
     return {
-
-      ok: false,
-
-      message:
-        "TARGET NOT READY"
-
+      ok:false,
+      message:"TARGET NOT READY"
     };
 
   }
@@ -2153,12 +2231,12 @@ function validateBeforeCamera(
 
 
   /*
-     E → Remark G wajib
+   =====================================================
+   E → REMARK / ROOM DI G
+   =====================================================
   */
 
-  if (
-    column === 5
-  ) {
+  if (column === 5) {
 
     const remark =
       checklist
@@ -2173,17 +2251,21 @@ function validateBeforeCamera(
 
     if (
       !remark ||
-      remark ===
-        "NOT YET"
+      remark === "NOT YET"
     ) {
+
+      showCameraMessage(
+        "REMARK REQUIRED",
+        "Please enter a Remark or Room before scanning Time In."
+      );
+
 
       return {
 
-        ok: false,
+        ok:false,
 
         message:
-          "REMARK REQUIRED\n\n" +
-          "Please enter Remark in column G before scanning Time In."
+          "Please enter a Remark or Room before scanning Time In."
 
       };
 
@@ -2193,12 +2275,12 @@ function validateBeforeCamera(
 
 
   /*
-     AI → Remark AK wajib
+   =====================================================
+   AI → REMARK / ROOM DI AK
+   =====================================================
   */
 
-  if (
-    column === 35
-  ) {
+  if (column === 35) {
 
     const remark =
       checklist
@@ -2213,17 +2295,21 @@ function validateBeforeCamera(
 
     if (
       !remark ||
-      remark ===
-        "NOT YET"
+      remark === "NOT YET"
     ) {
+
+      showCameraMessage(
+        "REMARK REQUIRED",
+        "Please enter a Remark or Room before scanning Time In."
+      );
+
 
       return {
 
-        ok: false,
+        ok:false,
 
         message:
-          "REMARK REQUIRED\n\n" +
-          "Please enter Remark in column AK before scanning Time In."
+          "Please enter a Remark or Room before scanning Time In."
 
       };
 
@@ -2232,6 +2318,12 @@ function validateBeforeCamera(
   }
 
 
+  /*
+   =====================================================
+   TIME GAP
+   =====================================================
+  */
+
   return validateTimeGap(
     target,
     checklist
@@ -2239,6 +2331,7 @@ function validateBeforeCamera(
 
 }
 
+  
 
 /* =========================================================
    TARGET CHECK
