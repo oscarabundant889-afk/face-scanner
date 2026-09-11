@@ -1798,13 +1798,47 @@ async function checkTarget() {
     }
 
 
-    if (
-      !data.ready
-    ) {
 
-      return;
+/* =====================================================
+   TARGET TIDAK READY
+   ===================================================== */
 
-    }
+if (!data.ready) {
+
+  /*
+   * Jika target sebelumnya sudah selesai
+   * atau status sudah SCANNED,
+   * langsung matikan camera.
+   */
+
+  if (
+    currentTarget &&
+    data.sheet === currentTarget.sheet &&
+    Number(data.row) === Number(currentTarget.row) &&
+    Number(data.column) === Number(currentTarget.column)
+  ) {
+
+    stopCamera();
+
+    currentTarget = null;
+
+    scanLocked = false;
+
+    stableCount = 0;
+
+    lastEmployee = "";
+
+    setStatus(
+      "SCAN COMPLETED"
+    );
+
+  }
+
+  return;
+
+}
+
+    
 
 
     if (
@@ -2203,6 +2237,15 @@ async function scanFace() {
   if (!scanning) {
     return;
   }
+
+
+  if (!currentTarget) {
+
+  stopCamera();
+
+  return;
+
+}
 
 
   try {
