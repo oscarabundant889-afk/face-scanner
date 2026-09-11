@@ -1816,8 +1816,10 @@ async function loadDatabase() {
      bukan semua foto.
   */
 
-  const data =
-    await getFaceDatabase();
+ const data = {
+  ok: true,
+  faces: employees
+};
 
 
   if (
@@ -1985,43 +1987,121 @@ async function loadDatabase() {
    employee lagi setiap klik.
 */
 
+
 async function preloadFaceSystem() {
 
   if (preloadPromise) {
-
     return preloadPromise;
-
   }
-
 
   preloadPromise =
     (async function() {
 
-      /*
-         Model harus siap.
-      */
+      try {
 
-      await loadModels();
+        /*
+         =====================================================
+         STEP 1
+         AMBIL FACE DATABASE DULU
+         =====================================================
+        */
+
+        setStatus(
+          "LOADING FACE DATABASE..."
+        );
+
+        const data =
+          await getFaceDatabase();
 
 
-      /*
-         Database/cache kemudian siap.
-      */
+        if (
+          !data ||
+          !data.ok
+        ) {
 
-      await loadDatabase();
+          throw new Error(
+            data &&
+            (
+              data.message ||
+              data.error
+            )
+              ? (
+                  data.message ||
+                  data.error
+                )
+              : "FACE DATABASE ERROR"
+          );
+
+        }
 
 
-      setStatus(
-        "FACE SYSTEM READY"
-      );
+        employees =
+          Array.isArray(
+            data.faces
+          )
+            ? data.faces
+            : [];
 
-    })()
-    .catch(
-      function(error) {
+
+        if (
+          employees.length === 0
+        ) {
+
+          throw new Error(
+            "NO EMPLOYEE PHOTO FOUND"
+          );
+
+        }
+
+
+        databaseInfo.innerText =
+          "PHOTO DATABASE: " +
+          employees.length +
+          " EMPLOYEE";
+
+
+        /*
+         =====================================================
+         STEP 2
+         DATABASE SUDAH BERHASIL
+         BARU LOAD FACE MODEL
+         =====================================================
+        */
+
+        setStatus(
+          "LOADING FACE MODEL..."
+        );
+
+
+        await loadModels();
+
+
+        /*
+         =====================================================
+         STEP 3
+         PROSES DATABASE / CACHE
+         =====================================================
+        */
+
+        await loadDatabase();
+
+
+        /*
+         =====================================================
+         SELESAI
+         =====================================================
+        */
+
+        setStatus(
+          "FACE SYSTEM READY"
+        );
+
+      }
+
+      catch (error) {
 
         preloadPromise =
           null;
-
 
         console.error(
           "PRELOAD ERROR:",
@@ -2042,13 +2122,15 @@ async function preloadFaceSystem() {
         throw error;
 
       }
-    );
+
+    })();
 
 
   return preloadPromise;
 
 }
 
+  
 
 /* =========================================================
    GET CURRENT TARGET
