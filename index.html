@@ -12,9 +12,8 @@
 
 <title>FACE SCANNER</title>
 
-<script
-  src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js">
-</script>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
 
 <style>
 
@@ -30,20 +29,33 @@ html,
 body {
   margin: 0;
   padding: 0;
+
   background: #111;
+
   color: white;
+
   font-family: Arial, sans-serif;
+
   text-align: center;
 }
 
 body {
   min-height: 100vh;
+
   overflow-x: hidden;
 }
 
+
+/* =========================================================
+   TITLE
+   ========================================================= */
+
 h1 {
+
   margin: 8px 0 5px;
-  font-size: 26px;
+
+  font-size: 28px;
+
 }
 
 
@@ -54,9 +66,10 @@ h1 {
 #cameraBox {
 
   width: 280px;
+
   height: 210px;
 
-  margin: 6px auto;
+  margin: 8px auto;
 
   background: #222;
 
@@ -71,12 +84,16 @@ h1 {
   align-items: center;
 
   justify-content: center;
+
 }
 
+
+/* CAMERA */
 
 #video {
 
   width: 280px;
+
   height: 210px;
 
   object-fit: cover;
@@ -84,21 +101,25 @@ h1 {
   display: none;
 
   transform: scaleX(-1);
+
 }
 
 
+/* PLACEHOLDER */
+
 #placeholder {
 
-  font-size: 15px;
+  font-size: 16px;
 
   color: #aaa;
 
-  padding: 10px;
+  padding: 15px;
+
 }
 
 
 /* =========================================================
-   ONE PERSON FRAME
+   FACE GUIDE
    ========================================================= */
 
 #cameraBox::after {
@@ -108,24 +129,24 @@ h1 {
   position: absolute;
 
   width: 105px;
+
   height: 135px;
 
   left: 50%;
+
   top: 50%;
 
   transform:
     translate(-50%, -50%);
 
-  border: 2px solid rgba(
-    255,
-    255,
-    255,
-    0.85
-  );
+  border:
+    3px solid
+    rgba(255,255,255,.85);
 
   border-radius: 50%;
 
   pointer-events: none;
+
 }
 
 
@@ -137,11 +158,12 @@ h1 {
 
   margin-top: 5px;
 
+  min-height: 24px;
+
   font-size: 19px;
 
   font-weight: bold;
 
-  min-height: 24px;
 }
 
 
@@ -149,13 +171,14 @@ h1 {
 
   margin-top: 3px;
 
-  font-size: 19px;
+  min-height: 48px;
+
+  font-size: 20px;
 
   font-weight: bold;
 
-  min-height: 45px;
-
   white-space: pre-line;
+
 }
 
 
@@ -173,13 +196,14 @@ h1 {
 
   border-radius: 10px;
 
-  font-size: 19px;
+  font-size: 18px;
 
   font-weight: bold;
 
+  white-space: pre-line;
+
   display: none;
 
-  white-space: pre-line;
 }
 
 
@@ -187,9 +211,12 @@ h1 {
 
   margin-top: 3px;
 
-  font-size: 15px;
+  min-height: 18px;
+
+  font-size: 14px;
 
   color: #aaa;
+
 }
 
 
@@ -200,6 +227,7 @@ h1 {
   font-size: 15px;
 
   color: #aaa;
+
 }
 
 
@@ -210,6 +238,7 @@ h1 {
   font-size: 15px;
 
   color: #aaa;
+
 }
 
 
@@ -225,13 +254,29 @@ h1 {
 
   margin: 8px auto 12px;
 
-  text-align: left;
-
   background: #222;
 
   border-radius: 10px;
 
   overflow: hidden;
+
+  text-align: left;
+
+}
+
+
+.checkTitle {
+
+  padding: 8px;
+
+  text-align: center;
+
+  font-size: 17px;
+
+  font-weight: bold;
+
+  background: #292929;
+
 }
 
 
@@ -244,41 +289,45 @@ h1 {
 
   border-bottom:
     1px solid #444;
+
 }
 
 
 .checkRow:last-child {
 
   border-bottom: none;
+
 }
 
 
 .checkLabel {
 
-  padding: 8px;
+  padding: 7px;
+
+  font-size: 13px;
 
   font-weight: bold;
 
-  font-size: 14px;
-
   background: #292929;
+
 }
 
 
 .checkValue {
 
-  padding: 8px;
+  padding: 7px;
 
-  font-size: 14px;
+  font-size: 13px;
 
   color: #ddd;
 
   word-break: break-word;
+
 }
 
 
 /* =========================================================
-   MOBILE / SMALL SCREEN
+   SMALL SCREEN
    ========================================================= */
 
 @media (
@@ -287,60 +336,78 @@ h1 {
 
   h1 {
 
-    font-size: 23px;
+    font-size: 24px;
 
     margin: 5px 0 3px;
+
   }
+
 
   #cameraBox {
 
     width: 240px;
 
     height: 180px;
+
   }
+
 
   #video {
 
     width: 240px;
 
     height: 180px;
+
   }
+
 
   #cameraBox::after {
 
     width: 90px;
 
     height: 115px;
+
   }
+
 
   #status {
 
     font-size: 17px;
+
   }
+
 
   #result {
 
     font-size: 17px;
+
   }
+
 
   #warning {
 
-    font-size: 17px;
+    font-size: 16px;
 
-    padding: 7px;
+    padding: 8px;
+
   }
 
-  #checklist {
 
-    margin-top: 5px;
+  .checkRow {
+
+    grid-template-columns:
+      160px 1fr;
+
   }
+
 
   .checkLabel,
   .checkValue {
 
     padding: 6px;
 
-    font-size: 13px;
+    font-size: 12px;
+
   }
 
 }
@@ -359,25 +426,25 @@ h1 {
     width: 220px;
 
     height: 165px;
+
   }
+
 
   #video {
 
     width: 220px;
 
     height: 165px;
+
   }
+
 
   #cameraBox::after {
 
     width: 82px;
 
     height: 105px;
-  }
 
-  #checklist {
-
-    margin-bottom: 5px;
   }
 
 }
@@ -418,7 +485,7 @@ h1 {
      ===================================================== -->
 
 <div id="status">
-  PREPARING FACE SYSTEM...
+  STARTING...
 </div>
 
 
@@ -437,7 +504,7 @@ h1 {
 
 
 <div id="databaseInfo">
-  LOADING FACE DATABASE...
+  PREPARING FACE DATABASE...
 </div>
 
 
@@ -446,6 +513,10 @@ h1 {
      ===================================================== -->
 
 <div id="checklist">
+
+  <div class="checkTitle">
+    ATTENDANCE STATUS
+  </div>
 
 
   <div class="checkRow">
@@ -552,7 +623,6 @@ h1 {
 
   </div>
 
-
 </div>
 
 
@@ -599,15 +669,15 @@ const DETECTOR_INPUT_SIZE =
 
 
 /* =========================================================
-   SPEED SETTINGS
+   INTERVAL
    ========================================================= */
 
 const TARGET_CHECK_INTERVAL =
-  500;
+  700;
 
 
 const SCAN_INTERVAL =
-  250;
+  300;
 
 
 /* =========================================================
@@ -623,7 +693,7 @@ const WARNING_TIME =
    ========================================================= */
 
 const CACHE_DB_NAME =
-  "FACE_SCANNER_CACHE_V2";
+  "FACE_SCANNER_CACHE_V3";
 
 
 const CACHE_DB_VERSION =
@@ -635,7 +705,7 @@ const CACHE_STORE =
 
 
 const CACHE_SIGNATURE =
-  "FACE_DATABASE_SIGNATURE_V2";
+  "FACE_DATABASE_SIGNATURE_V3";
 
 
 /* =========================================================
@@ -694,12 +764,12 @@ const databaseInfo =
    VARIABLES
    ========================================================= */
 
-let faceMatcher =
-  null;
-
-
 let employees =
   [];
+
+
+let faceMatcher =
+  null;
 
 
 let cameraStream =
@@ -722,20 +792,20 @@ let lastEmployee =
   "";
 
 
-let modelsLoaded =
-  false;
-
-
-let databaseLoaded =
-  false;
+let currentTarget =
+  null;
 
 
 let targetChecking =
   false;
 
 
-let currentTarget =
-  null;
+let modelsLoaded =
+  false;
+
+
+let databaseLoaded =
+  false;
 
 
 let preloadPromise =
@@ -772,11 +842,14 @@ function showWarning(
     warningTimer
   );
 
+
   warningBox.innerText =
     message;
 
+
   warningBox.style.display =
     "block";
+
 
   warningTimer =
     setTimeout(
@@ -829,7 +902,7 @@ function updateChecklist(
   document.getElementById(
     "checkTimeoutStamp"
   ).innerText =
-    checklist.systemTimeOut ||
+    checklist.timeOutStamp ||
     "NOT YET";
 
 
@@ -843,7 +916,7 @@ function updateChecklist(
   document.getElementById(
     "checkTimeInStamp"
   ).innerText =
-    checklist.systemTimeIn ||
+    checklist.timeInStamp ||
     "NOT YET";
 
 
@@ -857,7 +930,7 @@ function updateChecklist(
 
 
 /* =========================================================
-   API JSONP
+   JSONP API
    ========================================================= */
 
 function apiRequest(
@@ -873,7 +946,7 @@ function apiRequest(
     ) {
 
       const callbackName =
-        "FACE_CALLBACK_" +
+        "FACE_CB_" +
         Date.now() +
         "_" +
         Math.random()
@@ -891,6 +964,31 @@ function apiRequest(
         false;
 
 
+      let callbackCalled =
+        false;
+
+
+      function cleanup() {
+
+        clearTimeout(
+          timeout
+        );
+
+
+        try {
+
+          delete window[
+            callbackName
+          ];
+
+        } catch (e) {}
+
+
+        script.remove();
+
+      }
+
+
       const timeout =
         setTimeout(
           function() {
@@ -899,10 +997,13 @@ function apiRequest(
               return;
             }
 
+
             finished =
               true;
 
+
             cleanup();
+
 
             reject(
               new Error(
@@ -919,16 +1020,48 @@ function apiRequest(
       window[callbackName] =
         function(data) {
 
+          callbackCalled =
+            true;
+
+
           if (finished) {
             return;
           }
 
+
           finished =
             true;
 
+
           cleanup();
 
+
           resolve(data);
+
+        };
+
+
+      script.onload =
+        function() {
+
+          /*
+           * Google Apps Script may report
+           * script loaded before callback
+           * is executed.
+           *
+           * Therefore do NOT resolve here.
+           */
+
+          if (
+            !callbackCalled
+          ) {
+
+            console.log(
+              "API SCRIPT LOADED:",
+              action
+            );
+
+          }
 
         };
 
@@ -940,10 +1073,13 @@ function apiRequest(
             return;
           }
 
+
           finished =
             true;
 
+
           cleanup();
+
 
           reject(
             new Error(
@@ -957,13 +1093,13 @@ function apiRequest(
 
       let url =
         API_URL +
-        "?action=" +
-        encodeURIComponent(
-          action
-        ) +
-        "&callback=" +
+        "?callback=" +
         encodeURIComponent(
           callbackName
+        ) +
+        "&action=" +
+        encodeURIComponent(
+          action
         );
 
 
@@ -986,7 +1122,7 @@ function apiRequest(
 
 
       url +=
-        "&t=" +
+        "&_=" +
         Date.now();
 
 
@@ -994,30 +1130,53 @@ function apiRequest(
         url;
 
 
-      document.body.appendChild(
+      script.async =
+        true;
+
+
+      document.head.appendChild(
         script
       );
 
-
-      function cleanup() {
-
-        clearTimeout(
-          timeout
-        );
-
-        try {
-
-          delete window[
-            callbackName
-          ];
-
-        } catch (e) {}
-
-        script.remove();
-
-      }
-
     }
+  );
+
+}
+
+
+/* =========================================================
+   PING API
+   ========================================================= */
+
+async function testApiConnection() {
+
+  setStatus(
+    "CONNECTING TO FACE API..."
+  );
+
+
+  const result =
+    await apiRequest(
+      "ping",
+      {},
+      15000
+    );
+
+
+  if (
+    !result ||
+    !result.ok
+  ) {
+
+    throw new Error(
+      "FACE API PING FAILED"
+    );
+
+  }
+
+
+  setStatus(
+    "FACE API CONNECTED"
   );
 
 }
@@ -1034,6 +1193,21 @@ function openCache() {
       resolve,
       reject
     ) {
+
+      if (
+        !window.indexedDB
+      ) {
+
+        reject(
+          new Error(
+            "BROWSER CACHE NOT SUPPORTED"
+          )
+        );
+
+        return;
+
+      }
+
 
       const request =
         indexedDB.open(
@@ -1083,7 +1257,10 @@ function openCache() {
         function() {
 
           reject(
-            request.error
+            request.error ||
+            new Error(
+              "CACHE OPEN ERROR"
+            )
           );
 
         };
@@ -1117,14 +1294,10 @@ async function getCache() {
         );
 
 
-      const store =
+      const request =
         tx.objectStore(
           CACHE_STORE
-        );
-
-
-      const request =
-        store.getAll();
+        ).getAll();
 
 
       request.onsuccess =
@@ -1133,8 +1306,7 @@ async function getCache() {
           db.close();
 
           resolve(
-            request.result ||
-            []
+            request.result || []
           );
 
         };
@@ -1161,7 +1333,7 @@ async function getCache() {
    SAVE CACHE
    ========================================================= */
 
-async function saveCacheItem(
+async function saveCache(
   employeeId,
   name,
   descriptor
@@ -1289,7 +1461,7 @@ async function clearCache() {
 
 
 /* =========================================================
-   SIGNATURE
+   CACHE SIGNATURE
    ========================================================= */
 
 function makeSignature(
@@ -1300,22 +1472,24 @@ function makeSignature(
     .map(
       function(item) {
 
-        return (
+        return [
+
           String(
             item.employeeId ||
             ""
-          ) +
-          "|" +
+          ),
+
           String(
             item.name ||
             ""
-          ) +
-          "|" +
+          ),
+
           String(
             item.row ||
             ""
           )
-        );
+
+        ].join("|");
 
       }
     )
@@ -1324,7 +1498,7 @@ function makeSignature(
 }
 
 
-function getSignature() {
+function getCacheSignature() {
 
   try {
 
@@ -1343,7 +1517,7 @@ function getSignature() {
 }
 
 
-function setSignature(
+function saveCacheSignature(
   value
 ) {
 
@@ -1360,88 +1534,10 @@ function setSignature(
 
 
 /* =========================================================
-   LOAD MODELS
+   BUILD FACE MATCHER
    ========================================================= */
 
-async function loadModels() {
-
-  if (modelsLoaded) {
-    return;
-  }
-
-
-  setStatus(
-    "LOADING FACE MODEL..."
-  );
-
-
-  await faceapi.nets
-    .tinyFaceDetector
-    .loadFromUri(
-      MODEL_URL
-    );
-
-
-  await faceapi.nets
-    .faceLandmark68TinyNet
-    .loadFromUri(
-      MODEL_URL
-    );
-
-
-  await faceapi.nets
-    .faceRecognitionNet
-    .loadFromUri(
-      MODEL_URL
-    );
-
-
-  modelsLoaded =
-    true;
-
-}
-
-
-/* =========================================================
-   GET FACE DATABASE
-   ========================================================= */
-
-async function getFaceDatabase() {
-
-  return await apiRequest(
-    "faces",
-    {},
-    30000
-  );
-
-}
-
-
-/* =========================================================
-   GET PHOTO
-   ========================================================= */
-
-async function getFacePhoto(
-  row
-) {
-
-  return await apiRequest(
-    "photo",
-    {
-      row:
-        row
-    },
-    30000
-  );
-
-}
-
-
-/* =========================================================
-   BUILD MATCHER
-   ========================================================= */
-
-function buildMatcher(
+function buildFaceMatcher(
   cached
 ) {
 
@@ -1478,7 +1574,7 @@ function buildMatcher(
       } catch (error) {
 
         console.error(
-          "CACHE ERROR:",
+          "CACHE DESCRIPTOR ERROR:",
           error
         );
 
@@ -1506,15 +1602,136 @@ function buildMatcher(
 
 
 /* =========================================================
-   BUILD FACE CACHE
+   LOAD MODELS
    ========================================================= */
 
-async function buildFaceCache(
+async function loadModels() {
+
+  if (modelsLoaded) {
+    return;
+  }
+
+
+  setStatus(
+    "LOADING FACE MODEL..."
+  );
+
+
+  try {
+
+    await faceapi.nets
+      .tinyFaceDetector
+      .loadFromUri(
+        MODEL_URL
+      );
+
+  } catch (error) {
+
+    throw new Error(
+      "TINY FACE MODEL FAILED"
+    );
+
+  }
+
+
+  try {
+
+    await faceapi.nets
+      .faceLandmark68TinyNet
+      .loadFromUri(
+        MODEL_URL
+      );
+
+  } catch (error) {
+
+    throw new Error(
+      "FACE LANDMARK MODEL FAILED"
+    );
+
+  }
+
+
+  try {
+
+    await faceapi.nets
+      .faceRecognitionNet
+      .loadFromUri(
+        MODEL_URL
+      );
+
+  } catch (error) {
+
+    throw new Error(
+      "FACE RECOGNITION MODEL FAILED"
+    );
+
+  }
+
+
+  modelsLoaded =
+    true;
+
+
+  setStatus(
+    "FACE MODEL READY"
+  );
+
+}
+
+
+/* =========================================================
+   GET FACE DATABASE
+   ========================================================= */
+
+async function getFaceDatabase() {
+
+  return await apiRequest(
+    "faces",
+    {},
+    30000
+  );
+
+}
+
+
+/* =========================================================
+   GET PHOTO
+   ========================================================= */
+
+async function getFacePhoto(
+  row
+) {
+
+  return await apiRequest(
+
+    "photo",
+
+    {
+      row:
+        row
+    },
+
+    30000
+
+  );
+
+}
+
+
+/* =========================================================
+   BUILD DATABASE
+   ========================================================= */
+
+async function buildDatabaseCache(
   list
 ) {
 
   const CONCURRENCY =
     8;
+
+
+  const descriptors =
+    [];
 
 
   let nextIndex =
@@ -1523,10 +1740,6 @@ async function buildFaceCache(
 
   let completed =
     0;
-
-
-  const descriptors =
-    [];
 
 
   async function worker() {
@@ -1574,66 +1787,71 @@ async function buildFaceCache(
 
 
         if (
-          photo &&
-          photo.ok &&
-          photo.image
+          !photo ||
+          !photo.ok ||
+          !photo.image
         ) {
 
-          const image =
-            await faceapi.fetchImage(
-              photo.image
-            );
+          completed++;
+
+          continue;
+
+        }
 
 
-          const detection =
-            await faceapi
-              .detectSingleFace(
+        const image =
+          await faceapi.fetchImage(
+            photo.image
+          );
 
-                image,
 
-                new faceapi
-                  .TinyFaceDetectorOptions({
+        const detection =
+          await faceapi
+            .detectSingleFace(
 
-                    inputSize:
-                      DETECTOR_INPUT_SIZE,
+              image,
 
-                    scoreThreshold:
-                      0.5
+              new faceapi
+                .TinyFaceDetectorOptions({
 
-                  })
+                  inputSize:
+                    DETECTOR_INPUT_SIZE,
 
+                  scoreThreshold:
+                    0.5
+
+                })
+
+            )
+            .withFaceLandmarks(
+              true
+            )
+            .withFaceDescriptor();
+
+
+        if (detection) {
+
+          descriptors.push({
+
+            employeeId:
+              employeeId,
+
+            name:
+              employeeName,
+
+            descriptor:
+              Array.from(
+                detection.descriptor
               )
-              .withFaceLandmarks(
-                true
-              )
-              .withFaceDescriptor();
 
-
-          if (detection) {
-
-            descriptors.push({
-
-              employeeId:
-                employeeId,
-
-              name:
-                employeeName,
-
-              descriptor:
-                Array.from(
-                  detection.descriptor
-                )
-
-            });
-
-          }
+          });
 
         }
 
       } catch (error) {
 
         console.error(
-          "PHOTO PROCESS ERROR:",
+          "PHOTO ERROR:",
           employeeId,
           error
         );
@@ -1644,12 +1862,11 @@ async function buildFaceCache(
       completed++;
 
 
-      setStatus(
+      databaseInfo.innerText =
         "PROCESSING FACE " +
         completed +
-        "/" +
-        list.length
-      );
+        " / " +
+        list.length;
 
     }
 
@@ -1696,6 +1913,10 @@ async function buildFaceCache(
   }
 
 
+  /*
+   * SAVE CACHE
+   */
+
   setStatus(
     "SAVING FACE CACHE..."
   );
@@ -1722,7 +1943,7 @@ async function buildFaceCache(
       batch.map(
         function(item) {
 
-          return saveCacheItem(
+          return saveCache(
 
             item.employeeId,
 
@@ -1740,7 +1961,7 @@ async function buildFaceCache(
   }
 
 
-  setSignature(
+  saveCacheSignature(
     makeSignature(
       list
     )
@@ -1752,7 +1973,7 @@ async function buildFaceCache(
 
 
   faceMatcher =
-    buildMatcher(
+    buildFaceMatcher(
       cached
     );
 
@@ -1760,7 +1981,7 @@ async function buildFaceCache(
   if (!faceMatcher) {
 
     throw new Error(
-      "FACE CACHE FAILED"
+      "FACE MATCHER FAILED"
     );
 
   }
@@ -1779,7 +2000,7 @@ async function buildFaceCache(
 
 
   setStatus(
-    "FACE SYSTEM READY"
+    "FACE DATABASE READY"
   );
 
 }
@@ -1796,8 +2017,30 @@ async function loadDatabase() {
   }
 
 
-  const data =
-    await getFaceDatabase();
+  setStatus(
+    "LOADING FACE DATABASE..."
+  );
+
+
+  /*
+   * API FACES
+   */
+
+  let data;
+
+
+  try {
+
+    data =
+      await getFaceDatabase();
+
+  } catch (error) {
+
+    throw new Error(
+      "FACE DATABASE CONNECTION FAILED"
+    );
+
+  }
 
 
   if (
@@ -1833,6 +2076,7 @@ async function loadDatabase() {
     Array.isArray(
       data.faces
     )
+
       ?
 
       data.faces
@@ -1859,6 +2103,26 @@ async function loadDatabase() {
     " EMPLOYEE";
 
 
+  /*
+   * CHECK CACHE
+   */
+
+  let cached = [];
+
+
+  try {
+
+    cached =
+      await getCache();
+
+  } catch (error) {
+
+    cached =
+      [];
+
+  }
+
+
   const signature =
     makeSignature(
       employees
@@ -1866,27 +2130,25 @@ async function loadDatabase() {
 
 
   const oldSignature =
-    getSignature();
-
-
-  const cached =
-    await getCache();
+    getCacheSignature();
 
 
   /*
-   * CACHE VALID
+   * USE CACHE
    */
 
   if (
+
     oldSignature ===
       signature &&
 
     cached.length ===
       employees.length
+
   ) {
 
     faceMatcher =
-      buildMatcher(
+      buildFaceMatcher(
         cached
       );
 
@@ -1906,7 +2168,7 @@ async function loadDatabase() {
 
 
       setStatus(
-        "FACE SYSTEM READY"
+        "FACE DATABASE READY"
       );
 
 
@@ -1918,10 +2180,12 @@ async function loadDatabase() {
 
 
   /*
-   * BUILD NEW CACHE
+   * CACHE INVALID
+   *
+   * BUILD AGAIN
    */
 
-  await buildFaceCache(
+  await buildDatabaseCache(
     employees
   );
 
@@ -1929,7 +2193,7 @@ async function loadDatabase() {
 
 
 /* =========================================================
-   PRELOAD FACE SYSTEM
+   PRELOAD
    ========================================================= */
 
 async function preloadFaceSystem() {
@@ -1942,59 +2206,74 @@ async function preloadFaceSystem() {
 
 
   preloadPromise =
-    Promise.resolve()
+    (async function() {
 
-      .then(
-        async function() {
-
-          /*
-           * MODEL FIRST
-           */
-
-          await loadModels();
-
-
-          /*
-           * DATABASE SECOND
-           */
-
-          await loadDatabase();
-
-
-          setStatus(
-            "FACE SYSTEM READY"
-          );
-
-        }
-      )
-
-      .catch(
-        function(error) {
-
-          preloadPromise =
-            null;
-
-
-          console.error(
-            "PRELOAD ERROR:",
-            error
-          );
-
-
-          setStatus(
-            "FACE SYSTEM ERROR"
-          );
-
-
-          resultBox.innerText =
-            error.message ||
-            "FACE SYSTEM ERROR";
-
-
-          throw error;
-
-        }
+      setStatus(
+        "PREPARING FACE SYSTEM..."
       );
+
+
+      /*
+       * STEP 1
+       * MODEL
+       */
+
+      await loadModels();
+
+
+      /*
+       * STEP 2
+       * API
+       */
+
+      await testApiConnection();
+
+
+      /*
+       * STEP 3
+       * DATABASE
+       */
+
+      await loadDatabase();
+
+
+      /*
+       * READY
+       */
+
+      setStatus(
+        "FACE SYSTEM READY"
+      );
+
+
+    })()
+    .catch(
+      function(error) {
+
+        preloadPromise =
+          null;
+
+
+        console.error(
+          "FACE SYSTEM ERROR:",
+          error
+        );
+
+
+        setStatus(
+          "FACE SYSTEM ERROR"
+        );
+
+
+        resultBox.innerText =
+          error.message ||
+          "FACE SYSTEM ERROR";
+
+
+        throw error;
+
+      }
+    );
 
 
   return preloadPromise;
@@ -2003,10 +2282,10 @@ async function preloadFaceSystem() {
 
 
 /* =========================================================
-   GET TARGET
+   TARGET API
    ========================================================= */
 
-async function getCurrentTarget() {
+async function getTarget() {
 
   return await apiRequest(
     "target",
@@ -2018,7 +2297,49 @@ async function getCurrentTarget() {
 
 
 /* =========================================================
-   TIME PARSER
+   COLUMN LETTER
+   ========================================================= */
+
+function columnToLetter(
+  column
+) {
+
+  let result =
+    "";
+
+
+  while (
+    column > 0
+  ) {
+
+    const temp =
+      (column - 1) %
+      26;
+
+
+    result =
+      String.fromCharCode(
+        temp + 65
+      ) +
+      result;
+
+
+    column =
+      Math.floor(
+        (column - temp - 1) /
+        26
+      );
+
+  }
+
+
+  return result;
+
+}
+
+
+/* =========================================================
+   TIME → MINUTES
    ========================================================= */
 
 function timeToMinutes(
@@ -2070,15 +2391,7 @@ function timeToMinutes(
 
     !Number.isFinite(
       minute
-    ) ||
-
-    hour < 0 ||
-
-    hour > 23 ||
-
-    minute < 0 ||
-
-    minute > 59
+    )
   ) {
 
     return null;
@@ -2095,13 +2408,22 @@ function timeToMinutes(
 
 
 /* =========================================================
-   CHECK TIME GAP
+   TIME GAP
    ========================================================= */
 
 function validateTimeGap(
   target,
   checklist
 ) {
+
+  if (!target) {
+
+    return {
+      ok: true
+    };
+
+  }
+
 
   if (!checklist) {
 
@@ -2118,235 +2440,132 @@ function validateTimeGap(
     );
 
 
+  let previousTime =
+    "";
+
+
   /*
-   * GROUP 1
+   * E
    *
-   * D → F
+   * D = SYSTEM TIME OUT
    */
 
   if (
     column === 5
   ) {
 
-    const timeOut =
-      checklist.systemTimeOut;
-
-
-    if (
-      timeOut &&
-      timeOut !== "NOT YET"
-    ) {
-
-      const now =
-        new Date();
-
-
-      const currentMinutes =
-        now.getHours() * 60 +
-        now.getMinutes();
-
-
-      const outMinutes =
-        timeToMinutes(
-          timeOut
-        );
-
-
-      if (
-        outMinutes !== null
-      ) {
-
-        let difference =
-          currentMinutes -
-          outMinutes;
-
-
-        if (
-          difference < 0
-        ) {
-
-          difference +=
-            24 * 60;
-
-        }
-
-
-        /*
-         * 1 menit atau kurang
-         * TIDAK BOLEH
-         */
-
-        if (
-          difference <= 1
-        ) {
-
-          return {
-
-            ok: false,
-
-            message:
-              "TIME IN NOT ALLOWED\n\n" +
-              "TIME OUT and TIME IN must be more than 1 minute apart."
-
-          };
-
-        }
-
-      }
-
-    }
+    previousTime =
+      checklist.timeOutStamp;
 
   }
 
 
   /*
-   * GROUP 2
+   * X
    *
-   * V → X
+   * V = TIME OUT
    */
 
   if (
     column === 24
   ) {
 
-    const timeOut =
+    previousTime =
       checklist.timeOut;
-
-
-    if (
-      timeOut &&
-      timeOut !== "NOT YET"
-    ) {
-
-      const now =
-        new Date();
-
-
-      const currentMinutes =
-        now.getHours() * 60 +
-        now.getMinutes();
-
-
-      const outMinutes =
-        timeToMinutes(
-          timeOut
-        );
-
-
-      if (
-        outMinutes !== null
-      ) {
-
-        let difference =
-          currentMinutes -
-          outMinutes;
-
-
-        if (
-          difference < 0
-        ) {
-
-          difference +=
-            24 * 60;
-
-        }
-
-
-        if (
-          difference <= 1
-        ) {
-
-          return {
-
-            ok: false,
-
-            message:
-              "TIME IN NOT ALLOWED\n\n" +
-              "TIME OUT and TIME IN must be more than 1 minute apart."
-
-          };
-
-        }
-
-      }
-
-    }
 
   }
 
 
   /*
-   * GROUP 3
+   * AI
    *
-   * AG → AI
+   * AG = TIME OUT
    */
 
   if (
     column === 35
   ) {
 
-    const timeOut =
+    previousTime =
       checklist.timeOut;
 
-
-    if (
-      timeOut &&
-      timeOut !== "NOT YET"
-    ) {
-
-      const now =
-        new Date();
+  }
 
 
-      const currentMinutes =
-        now.getHours() * 60 +
-        now.getMinutes();
+  if (
+    !previousTime ||
+    previousTime === "NOT YET"
+  ) {
+
+    return {
+      ok: true
+    };
+
+  }
 
 
-      const outMinutes =
-        timeToMinutes(
-          timeOut
-        );
+  const previousMinutes =
+    timeToMinutes(
+      previousTime
+    );
 
 
-      if (
-        outMinutes !== null
-      ) {
+  if (
+    previousMinutes === null
+  ) {
 
-        let difference =
-          currentMinutes -
-          outMinutes;
+    return {
+      ok: true
+    };
 
-
-        if (
-          difference < 0
-        ) {
-
-          difference +=
-            24 * 60;
-
-        }
+  }
 
 
-        if (
-          difference <= 1
-        ) {
+  const now =
+    new Date();
 
-          return {
 
-            ok: false,
+  const currentMinutes =
+    now.getHours() * 60 +
+    now.getMinutes();
 
-            message:
-              "TIME IN NOT ALLOWED\n\n" +
-              "TIME OUT and TIME IN must be more than 1 minute apart."
 
-          };
+  let difference =
+    currentMinutes -
+    previousMinutes;
 
-        }
 
-      }
+  /*
+   * CROSS MIDNIGHT
+   */
 
-    }
+  if (
+    difference < 0
+  ) {
+
+    difference +=
+      24 * 60;
+
+  }
+
+
+  /*
+   * HARUS LEBIH DARI 1 MENIT
+   */
+
+  if (
+    difference <= 1
+  ) {
+
+    return {
+
+      ok: false,
+
+      message:
+        "TIME IN NOT ALLOWED\n\n" +
+        "TIME OUT and TIME IN must be more than 1 minute apart."
+
+    };
 
   }
 
@@ -2359,7 +2578,7 @@ function validateTimeGap(
 
 
 /* =========================================================
-   PRE-SCAN VALIDATION
+   PRE CAMERA VALIDATION
    ========================================================= */
 
 function validateBeforeCamera(
@@ -2390,7 +2609,7 @@ function validateBeforeCamera(
   /*
    * E
    *
-   * G REMARK REQUIRED
+   * G REQUIRED
    */
 
   if (
@@ -2434,7 +2653,7 @@ function validateBeforeCamera(
   /*
    * AI
    *
-   * AK REMARK REQUIRED
+   * AK REQUIRED
    */
 
   if (
@@ -2479,7 +2698,7 @@ function validateBeforeCamera(
    * TIME GAP
    */
 
-  const timeValidation =
+  const gap =
     validateTimeGap(
       target,
       checklist
@@ -2487,10 +2706,10 @@ function validateBeforeCamera(
 
 
   if (
-    !timeValidation.ok
+    !gap.ok
   ) {
 
-    return timeValidation;
+    return gap;
 
   }
 
@@ -2503,48 +2722,56 @@ function validateBeforeCamera(
 
 
 /* =========================================================
-   TARGET MONITOR
+   STOP CAMERA
    ========================================================= */
 
-function startTargetMonitor() {
+function stopCamera() {
 
-  checkTarget();
-
-
-  setInterval(
-    checkTarget,
-    TARGET_CHECK_INTERVAL
-  );
-
-}
+  scanning =
+    false;
 
 
-/* =========================================================
-   SEND SCAN
-   ========================================================= */
+  if (cameraStream) {
 
-async function sendScanToSheet(
-  employeeId,
-  employeeName
-) {
+    cameraStream
+      .getTracks()
+      .forEach(
+        function(track) {
 
-  return await apiRequest(
+          track.stop();
 
-    "scan",
+        }
+      );
 
-    {
+  }
 
-      employeeId:
-        employeeId,
 
-      employeeName:
-        employeeName
+  cameraStream =
+    null;
 
-    },
 
-    15000
+  video.srcObject =
+    null;
 
-  );
+
+  video.style.display =
+    "none";
+
+
+  placeholder.style.display =
+    "block";
+
+
+  placeholder.innerText =
+    "WAITING FOR TARGET...";
+
+
+  stableCount =
+    0;
+
+
+  lastEmployee =
+    "";
 
 }
 
@@ -2563,11 +2790,76 @@ async function startCamera() {
   try {
 
     /*
-     * MAKE SURE FACE SYSTEM
-     * IS READY FIRST
+     * MAKE SURE SYSTEM READY
      */
 
     await preloadFaceSystem();
+
+
+    /*
+     * VALIDATE TARGET AGAIN
+     */
+
+    const data =
+      await getTarget();
+
+
+    if (
+      !data ||
+      !data.ok ||
+      !data.ready
+    ) {
+
+      showWarning(
+        "TARGET NOT READY"
+      );
+
+
+      setStatus(
+        "TARGET NOT READY"
+      );
+
+
+      return;
+
+    }
+
+
+    if (
+      data.checklist
+    ) {
+
+      updateChecklist(
+        data.checklist
+      );
+
+    }
+
+
+    const validation =
+      validateBeforeCamera(
+        data,
+        data.checklist
+      );
+
+
+    if (
+      !validation.ok
+    ) {
+
+      showWarning(
+        validation.message
+      );
+
+
+      setStatus(
+        "ACTION REQUIRED"
+      );
+
+
+      return;
+
+    }
 
 
     setStatus(
@@ -2581,11 +2873,17 @@ async function startCamera() {
     ) {
 
       throw new Error(
-        "BROWSER DOES NOT SUPPORT CAMERA"
+        "CAMERA NOT SUPPORTED"
       );
 
     }
 
+
+    /*
+     * LOW CAMERA RESOLUTION
+     *
+     * DISPLAY IS SMALL
+     */
 
     cameraStream =
       await navigator
@@ -2657,11 +2955,15 @@ async function startCamera() {
 
     scanFace();
 
-
   } catch (error) {
 
-    scanning =
-      false;
+    console.error(
+      "CAMERA ERROR:",
+      error
+    );
+
+
+    stopCamera();
 
 
     setStatus(
@@ -2673,357 +2975,43 @@ async function startCamera() {
       error.message ||
       "CAMERA ERROR";
 
-
-    console.error(
-      "CAMERA ERROR:",
-      error
-    );
-
   }
 
 }
 
 
 /* =========================================================
-   STOP CAMERA
+   SEND SCAN
    ========================================================= */
 
-function stopCamera() {
+async function sendScan(
+  employeeId,
+  employeeName
+) {
 
-  scanning =
-    false;
+  return await apiRequest(
 
+    "scan",
 
-  if (cameraStream) {
+    {
 
-    cameraStream
-      .getTracks()
-      .forEach(
-        function(track) {
+      employeeId:
+        employeeId,
 
-          track.stop();
+      employeeName:
+        employeeName
 
-        }
-      );
+    },
 
-  }
+    15000
 
-
-  cameraStream =
-    null;
-
-
-  video.srcObject =
-    null;
-
-
-  video.style.display =
-    "none";
-
-
-  placeholder.style.display =
-    "block";
-
-
-  placeholder.innerText =
-    "WAITING FOR TARGET...";
-
-
-  stableCount =
-    0;
-
-
-  lastEmployee =
-    "";
+  );
 
 }
 
 
 /* =========================================================
-   CHECK TARGET
-   ========================================================= */
-
-async function checkTarget() {
-
-  if (targetChecking) {
-    return;
-  }
-
-
-  targetChecking =
-    true;
-
-
-  try {
-
-    const data =
-      await getCurrentTarget();
-
-
-    if (
-      !data ||
-      !data.ok
-    ) {
-
-      return;
-
-    }
-
-
-    if (
-      data.checklist
-    ) {
-
-      updateChecklist(
-        data.checklist
-      );
-
-    }
-
-
-    /*
-     * TARGET NOT READY
-     */
-
-    if (
-      !data.ready
-    ) {
-
-      if (
-        currentTarget &&
-        data.sheet ===
-          currentTarget.sheet &&
-
-        Number(data.row) ===
-          Number(currentTarget.row) &&
-
-        Number(data.column) ===
-          Number(currentTarget.column)
-      ) {
-
-        stopCamera();
-
-
-        currentTarget =
-          null;
-
-
-        scanLocked =
-          false;
-
-
-        stableCount =
-          0;
-
-
-        lastEmployee =
-          "";
-
-
-        setStatus(
-          "SCAN COMPLETED"
-        );
-
-      }
-
-
-      return;
-
-    }
-
-
-    if (
-      !data.sheet ||
-      !data.row ||
-      !data.column
-    ) {
-
-      return;
-
-    }
-
-
-    const allowed = [
-
-      1,
-      5,
-      20,
-      24,
-      31,
-      35
-
-    ];
-
-
-    if (
-      allowed.indexOf(
-        Number(
-          data.column
-        )
-      ) === -1
-    ) {
-
-      return;
-
-    }
-
-
-    const newKey =
-      data.sheet +
-      "|" +
-      data.row +
-      "|" +
-      data.column;
-
-
-    const oldKey =
-      currentTarget
-
-        ?
-
-        currentTarget.sheet +
-        "|" +
-        currentTarget.row +
-        "|" +
-        currentTarget.column
-
-        :
-
-        "";
-
-
-    /*
-     * NEW TARGET
-     */
-
-    if (
-      newKey !==
-      oldKey
-    ) {
-
-      if (scanning) {
-
-        stopCamera();
-
-      }
-
-
-      scanLocked =
-        false;
-
-
-      stableCount =
-        0;
-
-
-      lastEmployee =
-        "";
-
-
-      currentTarget = {
-
-        sheet:
-          data.sheet,
-
-        row:
-          Number(
-            data.row
-          ),
-
-        column:
-          Number(
-            data.column
-          )
-
-      };
-
-
-      targetInfo.innerText =
-        "TARGET: " +
-        data.sheet +
-        "!" +
-        columnToLetter(
-          Number(
-            data.column
-          )
-        ) +
-        data.row;
-
-
-      resultBox.innerText =
-        "";
-
-
-      distanceBox.innerText =
-        "";
-
-
-      updateChecklist(
-        data.checklist
-      );
-
-
-      /*
-       * PRE-SCAN VALIDATION
-       */
-
-      const validation =
-        validateBeforeCamera(
-          currentTarget,
-          data.checklist
-        );
-
-
-      if (
-        !validation.ok
-      ) {
-
-        showWarning(
-          validation.message
-        );
-
-
-        setStatus(
-          "ACTION REQUIRED"
-        );
-
-
-        stopCamera();
-
-
-        return;
-
-      }
-
-
-      /*
-       * CAMERA AUTO START
-       */
-
-      await startCamera();
-
-    }
-
-
-  } catch (error) {
-
-    console.log(
-      "TARGET CHECK ERROR:",
-      error.message
-    );
-
-  } finally {
-
-    targetChecking =
-      false;
-
-  }
-
-}
-
-
-/* =========================================================
-   FACE SCAN
+   FACE SCANNING
    ========================================================= */
 
 async function scanFace() {
@@ -3033,9 +3021,18 @@ async function scanFace() {
   }
 
 
-  if (!currentTarget) {
+  if (!faceMatcher) {
 
-    stopCamera();
+    setStatus(
+      "FACE DATABASE NOT READY"
+    );
+
+
+    setTimeout(
+      scanFace,
+      SCAN_INTERVAL
+    );
+
 
     return;
 
@@ -3044,31 +3041,18 @@ async function scanFace() {
 
   try {
 
-    if (!faceMatcher) {
-
-      setStatus(
-        "FACE DATABASE NOT READY"
-      );
-
-
-      setTimeout(
-        scanFace,
-        SCAN_INTERVAL
-      );
-
-
-      return;
-
-    }
-
-
     /*
-     * DETECT ONE FACE
+     * IMPORTANT:
+     *
+     * detect ALL faces.
+     *
+     * This prevents scanning when
+     * more than one person is visible.
      */
 
-    const detection =
+    const detections =
       await faceapi
-        .detectSingleFace(
+        .detectAllFaces(
 
           video,
 
@@ -3087,14 +3071,16 @@ async function scanFace() {
         .withFaceLandmarks(
           true
         )
-        .withFaceDescriptor();
+        .withFaceDescriptors();
 
 
     /*
      * NO FACE
      */
 
-    if (!detection) {
+    if (
+      detections.length === 0
+    ) {
 
       resultBox.innerText =
         "LOOK AT THE CAMERA";
@@ -3129,8 +3115,58 @@ async function scanFace() {
 
 
     /*
-     * MATCH
+     * MORE THAN ONE FACE
      */
+
+    if (
+      detections.length > 1
+    ) {
+
+      resultBox.innerText =
+        "ONE PERSON ONLY";
+
+
+      distanceBox.innerText =
+        "";
+
+
+      stableCount =
+        0;
+
+
+      lastEmployee =
+        "";
+
+
+      setStatus(
+        "MULTIPLE FACES DETECTED"
+      );
+
+
+      showWarning(
+        "ONE PERSON ONLY\n\n" +
+        "Please keep other people out of the camera."
+      );
+
+
+      setTimeout(
+        scanFace,
+        SCAN_INTERVAL
+      );
+
+
+      return;
+
+    }
+
+
+    /*
+     * EXACTLY ONE FACE
+     */
+
+    const detection =
+      detections[0];
+
 
     const bestMatch =
       faceMatcher.findBestMatch(
@@ -3152,7 +3188,7 @@ async function scanFace() {
 
 
     /*
-     * NOT MATCHED
+     * UNKNOWN
      */
 
     if (
@@ -3210,8 +3246,11 @@ async function scanFace() {
     const employeeName =
       employee
         ?
+
         employee.name
+
         :
+
         "";
 
 
@@ -3244,10 +3283,12 @@ async function scanFace() {
 
 
     setStatus(
+
       "MATCH " +
       stableCount +
       "/" +
       REQUIRED_STABLE_MATCH
+
     );
 
 
@@ -3256,150 +3297,31 @@ async function scanFace() {
      */
 
     if (
+
       stableCount >=
         REQUIRED_STABLE_MATCH &&
 
       !scanLocked
+
     ) {
 
       scanLocked =
         true;
 
 
-      const target =
-        currentTarget;
-
-
-      if (!target) {
-
-        scanLocked =
-          false;
-
-        stopCamera();
-
-        return;
-
-      }
-
-
       /*
        * CHECK TARGET AGAIN
        */
 
+      let latestTarget;
+
+
       try {
 
-        const latestTarget =
-          await getCurrentTarget();
+        latestTarget =
+          await getTarget();
 
-
-        if (
-          !latestTarget ||
-          !latestTarget.ready
-        ) {
-
-          scanLocked =
-            false;
-
-
-          showWarning(
-            "TARGET NOT READY"
-          );
-
-
-          setStatus(
-            "TARGET NOT READY"
-          );
-
-
-          stopCamera();
-
-
-          currentTarget =
-            null;
-
-
-          return;
-
-        }
-
-
-        const latestChecklist =
-          latestTarget.checklist;
-
-
-        if (
-          latestChecklist
-        ) {
-
-          updateChecklist(
-            latestChecklist
-          );
-
-        }
-
-
-        /*
-         * VALIDATE AGAIN
-         */
-
-        const validation =
-          validateBeforeCamera(
-            target,
-            latestChecklist
-          );
-
-
-        if (
-          !validation.ok
-        ) {
-
-          scanLocked =
-            false;
-
-
-          showWarning(
-            validation.message
-          );
-
-
-          setStatus(
-            "ACTION REQUIRED"
-          );
-
-
-          stableCount =
-            0;
-
-
-          lastEmployee =
-            "";
-
-
-          /*
-           * KEEP CAMERA ON
-           * FOR 5 SECONDS
-           */
-
-          setTimeout(
-            function() {
-
-              if (scanning) {
-
-                scanFace();
-
-              }
-
-            },
-            WARNING_TIME
-          );
-
-
-          return;
-
-        }
-
-
-      } catch (validationError) {
+      } catch (error) {
 
         scanLocked =
           false;
@@ -3416,15 +3338,7 @@ async function scanFace() {
 
 
         setTimeout(
-          function() {
-
-            if (scanning) {
-
-              scanFace();
-
-            }
-
-          },
+          scanFace,
           WARNING_TIME
         );
 
@@ -3434,19 +3348,109 @@ async function scanFace() {
       }
 
 
+      if (
+        !latestTarget ||
+        !latestTarget.ok ||
+        !latestTarget.ready
+      ) {
+
+        scanLocked =
+          false;
+
+
+        showWarning(
+          "TARGET NOT READY"
+        );
+
+
+        setStatus(
+          "TARGET NOT READY"
+        );
+
+
+        stopCamera();
+
+
+        return;
+
+      }
+
+
+      if (
+        latestTarget.checklist
+      ) {
+
+        updateChecklist(
+          latestTarget.checklist
+        );
+
+      }
+
+
+      /*
+       * VALIDATE AGAIN
+       */
+
+      const validation =
+        validateBeforeCamera(
+
+          latestTarget,
+
+          latestTarget.checklist
+
+        );
+
+
+      if (
+        !validation.ok
+      ) {
+
+        scanLocked =
+          false;
+
+
+        stableCount =
+          0;
+
+
+        lastEmployee =
+          "";
+
+
+        showWarning(
+          validation.message
+        );
+
+
+        setStatus(
+          "ACTION REQUIRED"
+        );
+
+
+        setTimeout(
+          scanFace,
+          WARNING_TIME
+        );
+
+
+        return;
+
+      }
+
+
+      /*
+       * SEND TO API
+       */
+
       setStatus(
         "FACE VERIFIED"
       );
 
 
-      /*
-       * SEND TO SHEET
-       */
-
       try {
 
         const result =
-          await sendScanToSheet(
+          await sendScan(
 
             employeeId,
 
@@ -3492,7 +3496,7 @@ async function scanFace() {
           const isEmployeeScan =
             employeeColumns.indexOf(
               Number(
-                target.column
+                latestTarget.column
               )
             ) !== -1;
 
@@ -3567,7 +3571,7 @@ async function scanFace() {
           "";
 
 
-        const rejectionMessage =
+        const message =
           result &&
           (
             result.message ||
@@ -3587,11 +3591,11 @@ async function scanFace() {
 
 
         resultBox.innerText =
-          rejectionMessage;
+          message;
 
 
         showWarning(
-          rejectionMessage
+          message
         );
 
 
@@ -3602,19 +3606,10 @@ async function scanFace() {
 
         /*
          * CAMERA STAYS ON
-         * WARNING 5 SEC
          */
 
         setTimeout(
-          function() {
-
-            if (scanning) {
-
-              scanFace();
-
-            }
-
-          },
+          scanFace,
           WARNING_TIME
         );
 
@@ -3636,11 +3631,6 @@ async function scanFace() {
           "";
 
 
-        setStatus(
-          "SCAN ERROR"
-        );
-
-
         resultBox.innerText =
           error.message ||
           "SCAN ERROR";
@@ -3652,16 +3642,13 @@ async function scanFace() {
         );
 
 
+        setStatus(
+          "SCAN ERROR"
+        );
+
+
         setTimeout(
-          function() {
-
-            if (scanning) {
-
-              scanFace();
-
-            }
-
-          },
+          scanFace,
           WARNING_TIME
         );
 
@@ -3683,6 +3670,10 @@ async function scanFace() {
   }
 
 
+  /*
+   * CONTINUE SCANNING
+   */
+
   if (scanning) {
 
     setTimeout(
@@ -3696,85 +3687,341 @@ async function scanFace() {
 
 
 /* =========================================================
-   COLUMN NUMBER → LETTER
+   TARGET MONITOR
    ========================================================= */
 
-function columnToLetter(
-  column
-) {
+function startTargetMonitor() {
 
-  let letter =
-    "";
+  checkTarget();
 
 
-  while (
-    column > 0
-  ) {
-
-    const temp =
-      (column - 1) %
-      26;
-
-
-    letter =
-      String.fromCharCode(
-        temp + 65
-      ) +
-      letter;
-
-
-    column =
-      Math.floor(
-        (column - temp - 1) /
-        26
-      );
-
-  }
-
-
-  return letter;
+  setInterval(
+    checkTarget,
+    TARGET_CHECK_INTERVAL
+  );
 
 }
 
 
 /* =========================================================
-   MANUAL CACHE CLEAR
+   CHECK TARGET
    ========================================================= */
 
-window.clearFaceScannerCache =
-  async function() {
+async function checkTarget() {
 
-    await clearCache();
+  if (targetChecking) {
+    return;
+  }
 
 
-    localStorage.removeItem(
-      CACHE_SIGNATURE
+  targetChecking =
+    true;
+
+
+  try {
+
+    /*
+     * FACE SYSTEM HARUS READY
+     */
+
+    if (
+      !databaseLoaded ||
+      !faceMatcher
+    ) {
+
+      return;
+
+    }
+
+
+    const data =
+      await getTarget();
+
+
+    if (
+      !data ||
+      !data.ok
+    ) {
+
+      return;
+
+    }
+
+
+    /*
+     * UPDATE CHECKLIST
+     */
+
+    if (
+      data.checklist
+    ) {
+
+      updateChecklist(
+        data.checklist
+      );
+
+    }
+
+
+    /*
+     * TARGET NOT READY
+     */
+
+    if (
+      !data.ready
+    ) {
+
+      if (scanning) {
+
+        stopCamera();
+
+      }
+
+
+      return;
+
+    }
+
+
+    /*
+     * VALID TARGET
+     */
+
+    if (
+      !data.sheet ||
+      !data.row ||
+      !data.column
+    ) {
+
+      return;
+
+    }
+
+
+    const allowed =
+      [
+
+        1,
+        5,
+        20,
+        24,
+        31,
+        35
+
+      ];
+
+
+    if (
+      allowed.indexOf(
+        Number(
+          data.column
+        )
+      ) === -1
+    ) {
+
+      return;
+
+    }
+
+
+    const newKey =
+      data.sheet +
+      "|" +
+      data.row +
+      "|" +
+      data.column;
+
+
+    const oldKey =
+      currentTarget
+
+        ?
+
+        currentTarget.sheet +
+        "|" +
+        currentTarget.row +
+        "|" +
+        currentTarget.column
+
+        :
+
+        "";
+
+
+    /*
+     * NEW TARGET
+     */
+
+    if (
+      newKey !==
+      oldKey
+    ) {
+
+      if (scanning) {
+
+        stopCamera();
+
+      }
+
+
+      currentTarget = {
+
+        sheet:
+          data.sheet,
+
+        row:
+          Number(
+            data.row
+          ),
+
+        column:
+          Number(
+            data.column
+          )
+
+      };
+
+
+      scanLocked =
+        false;
+
+
+      stableCount =
+        0;
+
+
+      lastEmployee =
+        "";
+
+
+      targetInfo.innerText =
+        "TARGET: " +
+        data.sheet +
+        "!" +
+        columnToLetter(
+          Number(
+            data.column
+          )
+        ) +
+        data.row;
+
+
+      resultBox.innerText =
+        "";
+
+
+      distanceBox.innerText =
+        "";
+
+
+      /*
+       * VALIDATE
+       */
+
+      const validation =
+        validateBeforeCamera(
+
+          currentTarget,
+
+          data.checklist
+
+        );
+
+
+      if (
+        !validation.ok
+      ) {
+
+        showWarning(
+          validation.message
+        );
+
+
+        setStatus(
+          "ACTION REQUIRED"
+        );
+
+
+        return;
+
+      }
+
+
+      /*
+       * AUTO CAMERA
+       */
+
+      await startCamera();
+
+    }
+
+
+  } catch (error) {
+
+    console.log(
+      "TARGET CHECK:",
+      error.message
     );
 
+  } finally {
 
-    databaseLoaded =
+    targetChecking =
       false;
 
+  }
 
-    faceMatcher =
-      null;
-
-
-    employees =
-      [];
+}
 
 
-    preloadPromise =
-      null;
+/* =========================================================
+   CLEAR CACHE
+   ========================================================= */
+
+window.clearFaceCache =
+  async function() {
+
+    try {
+
+      await clearCache();
 
 
-    databaseInfo.innerText =
-      "CACHE CLEARED";
+      localStorage.removeItem(
+        CACHE_SIGNATURE
+      );
 
 
-    setStatus(
-      "CACHE CLEARED - RELOAD PAGE"
-    );
+      databaseLoaded =
+        false;
+
+
+      faceMatcher =
+        null;
+
+
+      employees =
+        [];
+
+
+      preloadPromise =
+        null;
+
+
+      databaseInfo.innerText =
+        "CACHE CLEARED";
+
+
+      setStatus(
+        "CACHE CLEARED - REFRESH PAGE"
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        error
+      );
+
+    }
 
   };
 
@@ -3785,43 +4032,61 @@ window.clearFaceScannerCache =
 
 window.addEventListener(
   "load",
-  function() {
+  async function() {
 
-    setStatus(
-      "PREPARING FACE SYSTEM..."
-    );
+    try {
 
-
-    targetInfo.innerText =
-      "WAITING FOR TARGET";
-
-
-    databaseInfo.innerText =
-      "LOADING FACE DATABASE...";
-
-
-    /*
-     * LOAD MODEL + DATABASE
-     */
-
-    preloadFaceSystem()
-      .catch(
-        function(error) {
-
-          console.error(
-            "PRELOAD ERROR:",
-            error
-          );
-
-        }
+      setStatus(
+        "STARTING FACE SYSTEM..."
       );
 
 
-    /*
-     * START TARGET MONITOR
-     */
+      targetInfo.innerText =
+        "WAITING FOR TARGET";
 
-    startTargetMonitor();
+
+      databaseInfo.innerText =
+        "PREPARING FACE DATABASE...";
+
+
+      /*
+       * LOAD EVERYTHING FIRST
+       */
+
+      await preloadFaceSystem();
+
+
+      /*
+       * AFTER READY
+       * START TARGET MONITOR
+       */
+
+      setStatus(
+        "FACE SYSTEM READY"
+      );
+
+
+      startTargetMonitor();
+
+
+    } catch (error) {
+
+      console.error(
+        "PAGE START ERROR:",
+        error
+      );
+
+
+      setStatus(
+        "FACE SYSTEM ERROR"
+      );
+
+
+      resultBox.innerText =
+        error.message ||
+        "FACE SYSTEM ERROR";
+
+    }
 
   }
 );
