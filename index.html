@@ -1,2492 +1,778 @@
-<!DOCTYPE html>
-<html>
-<head>
-
-<meta charset="UTF-8">
-
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1">
-
-<title>FACE SCANNER</title>
-
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-
-<style>
-
-/* =====================================================
-   BASIC
-===================================================== */
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  padding: 0 10px 20px;
-
-  background: #111;
-  color: white;
-
-  font-family: Arial, sans-serif;
-  text-align: center;
-}
-
-h1 {
-  margin: 12px 0 10px;
-  font-size: 34px;
-}
-
-
-/* =====================================================
-   CAMERA
-===================================================== */
-
-#cameraBox {
-
-  width: 320px;
-  height: 240px;
-
-  margin: 0 auto;
-
-  background: #222;
-
-  border-radius: 12px;
-
-  overflow: hidden;
-
-  position: relative;
-
-  display: flex;
-
-  align-items: center;
-  justify-content: center;
-}
-
-
-#video {
-
-  width: 100%;
-  height: 100%;
-
-  object-fit: cover;
-
-  display: none;
-
-  transform: scaleX(-1);
-
-}
-
-
-#placeholder {
-
-  font-size: 20px;
-
-  color: #aaa;
-
-  padding: 20px;
-
-}
-
-
-/*
-   AREA TENGAH
-
-   Orang yang scan diarahkan
-   masuk ke area ini.
-*/
-
-#centerGuide {
-
-  position: absolute;
-
-  width: 150px;
-  height: 190px;
-
-  left: 50%;
-  top: 50%;
-
-  transform:
-    translate(-50%, -50%);
-
-  border:
-    2px solid
-    rgba(255,255,255,0.65);
-
-  border-radius:
-    75px 75px 55px 55px;
-
-  pointer-events: none;
-
-}
-
-
-/* =====================================================
-   STATUS
-===================================================== */
-
-#status {
-
-  margin-top: 12px;
-
-  font-size: 24px;
-
-  font-weight: bold;
-
-}
-
-
-#result {
-
-  margin-top: 8px;
-
-  font-size: 27px;
-
-  font-weight: bold;
-
-  min-height: 35px;
-
-  white-space: pre-line;
-
-}
-
-
-#distance {
-
-  margin-top: 3px;
-
-  font-size: 15px;
-
-  color: #aaa;
-
-}
-
-
-#targetInfo {
-
-  margin-top: 8px;
-
-  font-size: 19px;
-
-  color: #aaa;
-
-}
-
-
-#databaseInfo {
-
-  margin-top: 8px;
-
-  font-size: 16px;
-
-  color: #aaa;
-
-}
-
-
-/* =====================================================
-   CHECKLIST
-===================================================== */
-
-#checklist {
-
-  width: 320px;
-
-  margin: 10px auto 0;
-
-  background: #1b1b1b;
-
-  border-radius: 10px;
-
-  padding: 10px 12px;
-
-  text-align: left;
-
-  font-size: 16px;
-
-  line-height: 1.45;
-
-}
-
-
-.check-title {
-
-  font-size: 20px;
-
-  font-weight: bold;
-
-  margin-bottom: 5px;
-
-  text-align: center;
-
-}
-
-
-/* =====================================================
-   MOBILE
-===================================================== */
-
-@media (max-width: 380px) {
-
-  #cameraBox,
-  #checklist {
-
-    width: 300px;
+/* =========================================================
+   FACE SELECTION FINAL
+   AUTO READY AFTER REMARK G / AK IS FILLED
+   ========================================================= */
+
+const FACE_CONTROL_SHEET = "_FACE_CONTROL";
+
+const FACE_TARGET_COLUMNS = [
+  1,   // A
+  5,   // E
+  20,  // T
+  24,  // X
+  31,  // AE
+  35   // AI
+];
+
+
+/* =========================================================
+   SELECTION CHANGE
+   ========================================================= */
+
+function onSelectionChange(e) {
+
+  try {
+
+    if (!e || !e.range) return;
+
+    const range =
+      e.range;
+
+    const sheet =
+      range.getSheet();
+
+    const sheetName =
+      sheet.getName().trim();
+
+    /*
+     * Hanya attendance sheet
+     */
+
+    if (
+      !/^\d{2}-\d{2}(MS|NS)$/i.test(
+        sheetName
+      )
+    ) {
+      return;
+    }
+
+    const row =
+      range.getRow();
+
+    const column =
+      range.getColumn();
+
+    if (row < 5) {
+      return;
+    }
+
+    if (
+      FACE_TARGET_COLUMNS.indexOf(
+        column
+      ) === -1
+    ) {
+      return;
+    }
+
+    updateFaceTargetFromSelection(
+      e.source,
+      sheet,
+      row,
+      column
+    );
+
+  } catch (error) {
+
+    console.error(
+      "FACE SELECTION ERROR:",
+      error
+    );
 
   }
 
 }
 
-</style>
 
-</head>
+/* =========================================================
+   AUTO CHECK WHEN G / AK IS EDITED
+   ========================================================= */
 
+function onEdit(e) {
 
-<body>
+  try {
 
+    if (!e || !e.range) {
+      return;
+    }
 
-<h1>FACE SCANNER</h1>
+    const range =
+      e.range;
 
+    const sheet =
+      range.getSheet();
 
-<!-- =================================================
-     CAMERA
-================================================== -->
+    const sheetName =
+      sheet.getName().trim();
 
-<div id="cameraBox">
+    /*
+     * Hanya attendance sheet
+     */
 
-  <div id="placeholder">
-    WAITING FOR TARGET...
-  </div>
+    if (
+      !/^\d{2}-\d{2}(MS|NS)$/i.test(
+        sheetName
+      )
+    ) {
+      return;
+    }
 
-  <video
-    id="video"
-    autoplay
-    muted
-    playsinline>
-  </video>
+    const row =
+      range.getRow();
 
-  <div id="centerGuide"></div>
+    const column =
+      range.getColumn();
 
-</div>
+    if (row < 5) {
+      return;
+    }
 
+    /*
+     * G = Remark Group 1
+     * AK = Remark Group 3
+     */
 
-<div id="status">
-  WAITING FOR TARGET
-</div>
+    if (
+      column !== 7 &&
+      column !== 37
+    ) {
+      return;
+    }
 
+    const ss =
+      e.source;
 
-<div id="result"></div>
-
-
-<div id="distance"></div>
-
-
-<div id="targetInfo">
-  WAITING FOR TARGET
-</div>
-
-
-<div id="checklist">
-
-  <div class="check-title">
-    ATTENDANCE STATUS
-  </div>
-
-  <div id="checklistContent">
-    SELECT AN ATTENDANCE CELL
-  </div>
-
-</div>
-
-
-<div id="databaseInfo">
-  PREPARING FACE DATABASE...
-</div>
-
-
-<script>
-
-/* =====================================================
-   CONFIGURATION
-===================================================== */
-
-
-/*
-   API YANG SUDAH BERHASIL
-*/
-
-const API_URL =
-  "https://script.google.com/macros/s/AKfycbwGlmYYkvlm__QOQ1cyTOHB5Zi0eJwkGzaINKOTbTieG_z1E6dCBKkP9xYTX-vnwVoI/exec";
-
-
-/*
-   MODEL VERSI 0.22.2
-*/
-
-const MODEL_URL =
-  "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights";
-
-
-/*
-   Batas kecocokan wajah
-*/
-
-const MATCH_THRESHOLD = 0.50;
-
-
-/*
-   Hanya perlu 2 kali wajah yang sama
-*/
-
-const REQUIRED_STABLE_MATCH = 2;
-
-
-/*
-   Scan setiap 0.5 detik
-*/
-
-const SCAN_INTERVAL = 500;
-
-
-/*
-   Detector ringan
-*/
-
-const DETECTOR_INPUT_SIZE = 160;
-
-
-/*
-   Seberapa dekat wajah dengan
-   tengah kamera agar boleh dipilih.
-
-   0.40 = cukup longgar tetapi
-   tetap memprioritaskan tengah.
-*/
-
-const CENTER_TOLERANCE = 0.40;
-
-
-/* =====================================================
-   ELEMENT
-===================================================== */
-
-const video =
-  document.getElementById("video");
-
-
-const placeholder =
-  document.getElementById("placeholder");
-
-
-const statusBox =
-  document.getElementById("status");
-
-
-const resultBox =
-  document.getElementById("result");
-
-
-const distanceBox =
-  document.getElementById("distance");
-
-
-const targetInfo =
-  document.getElementById("targetInfo");
-
-
-const checklistContent =
-  document.getElementById("checklistContent");
-
-
-const databaseInfo =
-  document.getElementById("databaseInfo");
-
-
-/* =====================================================
-   VARIABLES
-===================================================== */
-
-let faceMatcher = null;
-
-let employees = [];
-
-let cameraStream = null;
-
-let scanning = false;
-
-let scanLocked = false;
-
-let stableCount = 0;
-
-let lastEmployee = "";
-
-let modelsLoaded = false;
-
-let databaseLoaded = false;
-
-let preloadPromise = null;
-
-let targetChecking = false;
-
-let currentTarget = null;
-
-let targetMonitor = null;
-
-
-/* =====================================================
-   STATUS
-===================================================== */
-
-function setStatus(message) {
-
-  statusBox.innerText =
-    message;
-
-}
-
-
-/* =====================================================
-   API JSONP
-===================================================== */
-
-function apiRequest(
-  action,
-  params = {},
-  timeoutMs = 30000
-) {
-
-  return new Promise(
-    function(resolve, reject) {
-
-      const callbackName =
-        "FACE_CALLBACK_" +
-        Date.now() +
-        "_" +
-        Math.random()
-          .toString(36)
-          .substring(2);
-
-
-      const script =
-        document.createElement(
-          "script"
-        );
-
-
-      let finished = false;
-
-
-      const timeout =
-        setTimeout(
-          function() {
-
-            if (finished) return;
-
-            finished = true;
-
-            cleanup();
-
-            reject(
-              new Error(
-                "API TIMEOUT: " +
-                action
-              )
-            );
-
-          },
-          timeoutMs
-        );
-
-
-      window[callbackName] =
-        function(data) {
-
-          if (finished) return;
-
-          finished = true;
-
-          cleanup();
-
-          resolve(data);
-
-        };
-
-
-      script.onerror =
-        function() {
-
-          if (finished) return;
-
-          finished = true;
-
-          cleanup();
-
-          reject(
-            new Error(
-              "API CONNECTION ERROR: " +
-              action
-            )
-          );
-
-        };
-
-
-      let url =
-        API_URL +
-        "?action=" +
-        encodeURIComponent(
-          action
-        ) +
-        "&callback=" +
-        encodeURIComponent(
-          callbackName
-        );
-
-
-      Object.keys(params)
-        .forEach(
-          function(key) {
-
-            url +=
-              "&" +
-              encodeURIComponent(
-                key
-              ) +
-              "=" +
-              encodeURIComponent(
-                params[key]
-              );
-
-          }
-        );
-
-
-      url +=
-        "&t=" +
-        Date.now();
-
-
-      script.src = url;
-
-      document.body.appendChild(
-        script
+    let control =
+      ss.getSheetByName(
+        FACE_CONTROL_SHEET
       );
 
+    if (!control) {
 
-      function cleanup() {
+      control =
+        ss.insertSheet(
+          FACE_CONTROL_SHEET
+        );
 
-        clearTimeout(timeout);
-
-        try {
-
-          delete window[
-            callbackName
-          ];
-
-        } catch (e) {}
-
-        script.remove();
-
-      }
+      control.hideSheet();
 
     }
-  );
 
-}
+    const data =
+      control
+        .getRange("A1:E1")
+        .getValues()[0];
 
-
-/* =====================================================
-   CHECKLIST
-===================================================== */
-
-function renderChecklist(
-  checklist
-) {
-
-  if (!checklistContent) {
-    return;
-  }
-
-
-  if (!checklist) {
-
-    checklistContent.innerText =
-      "SELECT AN ATTENDANCE CELL";
-
-    return;
-
-  }
-
-
-  const lines = [];
-
-
-  function add(
-    label,
-    value
-  ) {
-
-    const filled =
+    const targetSheet =
       String(
-        value || ""
-      ).trim() !== "";
+        data[0] || ""
+      ).trim();
 
+    const targetRow =
+      Number(
+        data[1] || 0
+      );
 
-    lines.push(
+    const targetColumn =
+      Number(
+        data[2] || 0
+      );
 
-      (filled
-        ? "✓ "
-        : "○ ") +
+    /*
+     * Kalau sedang menunggu E
+     * dan G baru diisi
+     */
 
-      label +
+    if (
+      column === 7 &&
+      targetSheet === sheetName &&
+      targetRow === row &&
+      targetColumn === 5
+    ) {
 
-      (
-        filled
-          ? " : COMPLETED"
-          : " : NOT YET"
-      )
+      updateFaceTargetFromSelection(
+        ss,
+        sheet,
+        row,
+        5
+      );
 
+      return;
+
+    }
+
+    /*
+     * Kalau sedang menunggu AI
+     * dan AK baru diisi
+     */
+
+    if (
+      column === 37 &&
+      targetSheet === sheetName &&
+      targetRow === row &&
+      targetColumn === 35
+    ) {
+
+      updateFaceTargetFromSelection(
+        ss,
+        sheet,
+        row,
+        35
+      );
+
+      return;
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      "FACE REMARK EDIT ERROR:",
+      error
     );
 
   }
-
-
-  add(
-    "EMPLOYEE NO",
-    checklist.employeeNo
-  );
-
-
-  add(
-    "NAME",
-    checklist.name
-  );
-
-
-  add(
-    "TIME OUT",
-    checklist.timeOut
-  );
-
-
-  add(
-    "SYSTEM TIME OUT",
-    checklist.timeOutStamp
-  );
-
-
-  add(
-    "TIME IN",
-    checklist.timeIn
-  );
-
-
-  add(
-    "SYSTEM TIME IN",
-    checklist.timeInStamp
-  );
-
-
-  if (
-    checklist.remarkRequired
-  ) {
-
-    add(
-      "REMARK",
-      checklist.remark
-    );
-
-  }
-
-
-  checklistContent.innerText =
-    lines.join("\n");
 
 }
 
 
-/* =====================================================
-   COLUMN NAME
-===================================================== */
+/* =========================================================
+   UPDATE TARGET
+   ========================================================= */
 
-function getColumnName(
+function updateFaceTargetFromSelection(
+  ss,
+  sheet,
+  row,
   column
 ) {
 
-  const names = {
+  let control =
+    ss.getSheetByName(
+      FACE_CONTROL_SHEET
+    );
 
-    1: "A",
+  if (!control) {
 
-    5: "E",
+    control =
+      ss.insertSheet(
+        FACE_CONTROL_SHEET
+      );
 
-    20: "T",
+    control.hideSheet();
 
-    24: "X",
+  }
 
-    31: "AE",
 
-    35: "AI"
+  /*
+   * E membutuhkan A
+   * X membutuhkan T
+   * AI membutuhkan AE
+   */
+
+  const prerequisiteMap = {
+
+    5: 1,
+
+    24: 20,
+
+    35: 31
 
   };
 
 
-  return names[
-    Number(column)
-  ] || "?";
-
-}
+  const requiredColumn =
+    prerequisiteMap[column];
 
 
-/* =====================================================
-   SET TARGET FROM URL
-===================================================== */
+  if (requiredColumn) {
 
-async function setTargetFromUrl() {
-
-  const params =
-    new URLSearchParams(
-      window.location.search
-    );
-
-
-  const sheet =
-    params.get("sheet");
+    const employee =
+      String(
+        sheet
+          .getRange(
+            row,
+            requiredColumn
+          )
+          .getDisplayValue()
+      ).trim();
 
 
-  const row =
-    params.get("row");
+    if (!employee) {
 
+      setFaceControl(
+        control,
+        sheet.getName(),
+        row,
+        column,
+        "WAITING"
+      );
 
-  const column =
-    params.get("column");
+      updateFaceStatusSheet(
+        sheet,
+        row,
+        column,
+        "EMPLOYEE REQUIRED"
+      );
 
+      SpreadsheetApp.flush();
 
-  if (
-    !sheet ||
-    !row ||
-    !column
-  ) {
+      return;
 
-    return false;
+    }
 
   }
 
 
-  try {
+  /*
+   * G wajib untuk E
+   */
 
-    const result =
-      await apiRequest(
-        "setTarget",
-        {
-          sheet:
-            sheet,
+  if (column === 5) {
 
-          row:
-            row,
+    const remark =
+      String(
+        sheet
+          .getRange(row, 7)
+          .getDisplayValue()
+      ).trim();
 
-          column:
-            column
-        },
-        15000
+
+    if (!remark) {
+
+      setFaceControl(
+        control,
+        sheet.getName(),
+        row,
+        column,
+        "WAITING"
       );
 
-
-    if (
-      !result ||
-      !result.ok
-    ) {
-
-      resultBox.innerText =
-        result &&
-        result.message
-          ? result.message
-          : "TARGET ERROR";
-
-
-      setStatus(
-        "TARGET ERROR"
+      updateFaceStatusSheet(
+        sheet,
+        row,
+        column,
+        "REMARK REQUIRED"
       );
 
+      SpreadsheetApp.flush();
 
-      return false;
+      return;
 
     }
 
+  }
 
-    currentTarget = {
 
-      sheet:
+  /*
+   * AK wajib untuk AI
+   */
+
+  if (column === 35) {
+
+    const remark =
+      String(
+        sheet
+          .getRange(row, 37)
+          .getDisplayValue()
+      ).trim();
+
+
+    if (!remark) {
+
+      setFaceControl(
+        control,
+        sheet.getName(),
+        row,
+        column,
+        "WAITING"
+      );
+
+      updateFaceStatusSheet(
         sheet,
+        row,
+        column,
+        "REMARK REQUIRED"
+      );
 
-      row:
-        Number(row),
+      SpreadsheetApp.flush();
 
-      column:
-        Number(column)
+      return;
+
+    }
+
+  }
+
+
+  /*
+   * Target sudah terisi
+   */
+
+  const currentValue =
+    String(
+      sheet
+        .getRange(
+          row,
+          column
+        )
+        .getDisplayValue()
+    ).trim();
+
+
+  if (currentValue !== "") {
+
+    setFaceControl(
+      control,
+      sheet.getName(),
+      row,
+      column,
+      "FILLED"
+    );
+
+    updateFaceStatusSheet(
+      sheet,
+      row,
+      column,
+      "ALREADY COMPLETED"
+    );
+
+    SpreadsheetApp.flush();
+
+    return;
+
+  }
+
+
+  /*
+   * READY
+   */
+
+  setFaceControl(
+    control,
+    sheet.getName(),
+    row,
+    column,
+    "READY"
+  );
+
+
+  updateFaceStatusSheet(
+    sheet,
+    row,
+    column,
+    "READY FOR FACE SCAN"
+  );
+
+
+  SpreadsheetApp.flush();
+
+}
+
+
+/* =========================================================
+   WRITE CONTROL
+   ========================================================= */
+
+function setFaceControl(
+  control,
+  sheetName,
+  row,
+  column,
+  status
+) {
+
+  control
+    .getRange("A1:E1")
+    .setValues([[
+      sheetName,
+      row,
+      column,
+      new Date(),
+      status
+    ]]);
+
+}
+
+
+/* =========================================================
+   STATUS PANEL
+   AL:AM
+   ========================================================= */
+
+function updateFaceStatusSheet(
+  sheet,
+  row,
+  column,
+  message
+) {
+
+  const cfg = {
+
+    1: {
+      employee: 1,
+      name: 2,
+      timeout: 3,
+      timeoutStamp: 4,
+      timeIn: 5,
+      timeInStamp: 6,
+      remark: 7
+    },
+
+    5: {
+      employee: 1,
+      name: 2,
+      timeout: 3,
+      timeoutStamp: 4,
+      timeIn: 5,
+      timeInStamp: 6,
+      remark: 7
+    },
+
+    20: {
+      employee: 20,
+      name: 21,
+      timeout: 22,
+      timeoutStamp: 23,
+      timeIn: 24,
+      timeInStamp: 25,
+      remark: null
+    },
+
+    24: {
+      employee: 20,
+      name: 21,
+      timeout: 22,
+      timeoutStamp: 23,
+      timeIn: 24,
+      timeInStamp: 25,
+      remark: null
+    },
+
+    31: {
+      employee: 31,
+      name: 32,
+      timeout: 33,
+      timeoutStamp: 34,
+      timeIn: 35,
+      timeInStamp: 36,
+      remark: 37
+    },
+
+    35: {
+      employee: 31,
+      name: 32,
+      timeout: 33,
+      timeoutStamp: 34,
+      timeIn: 35,
+      timeInStamp: 36,
+      remark: 37
+    }
+
+  };
+
+
+  const c =
+    cfg[column];
+
+  if (!c) {
+    return;
+  }
+
+
+  const get =
+    function(col) {
+
+      if (!col) {
+        return "";
+      }
+
+      return String(
+        sheet
+          .getRange(
+            row,
+            col
+          )
+          .getDisplayValue() ||
+        ""
+      ).trim();
 
     };
 
 
-    targetInfo.innerText =
-      "TARGET: " +
-      sheet +
-      "!" +
-      getColumnName(
-        column
-      ) +
-      row;
+  const values = [
+
+    ["TARGET", columnToLetterFace(column) + row],
+
+    ["STATUS", message],
+
+    ["EMPLOYEE NO", get(c.employee) || "NOT YET"],
+
+    ["NAME", get(c.name) || "NOT YET"],
+
+    ["TIME OUT", get(c.timeout) || "NOT YET"],
+
+    ["SYSTEM TIME OUT", get(c.timeoutStamp) || "NOT YET"],
+
+    ["TIME IN", get(c.timeIn) || "NOT YET"],
+
+    ["SYSTEM TIME IN", get(c.timeInStamp) || "NOT YET"],
+
+    ["REMARK", get(c.remark) || "NOT YET"]
+
+  ];
 
 
-    if (
-      result.checklist
-    ) {
-
-      renderChecklist(
-        result.checklist
-      );
-
-    }
+  sheet
+    .getRange("AL1:AM12")
+    .breakApart()
+    .clearContent();
 
 
-    /*
-       PENTING:
-
-       Kamera langsung mulai.
-
-       TIDAK menunggu database.
-    */
-
-    startCamera();
-
-
-    return true;
-
-
-  } catch (error) {
-
-    console.error(
-      "SET TARGET ERROR:",
-      error
+  sheet
+    .getRange("AL1:AM1")
+    .merge()
+    .setValue(
+      "FACE ATTENDANCE STATUS"
     );
 
 
-    resultBox.innerText =
-      error.message ||
-      "TARGET ERROR";
-
-
-    setStatus(
-      "TARGET ERROR"
-    );
-
-
-    return false;
-
-  }
-
-}
-
-
-/* =====================================================
-   GET CURRENT TARGET
-===================================================== */
-
-async function getCurrentTarget() {
-
-  return await apiRequest(
-    "target",
-    {},
-    10000
-  );
-
-}
-
-
-/* =====================================================
-   TARGET MONITOR
-===================================================== */
-
-async function checkTarget() {
-
-  if (targetChecking) {
-    return;
-  }
-
-
-  targetChecking = true;
-
-
-  try {
-
-    const data =
-      await getCurrentTarget();
-
-
-    if (
-      !data ||
-      !data.ok ||
-      !data.ready
-    ) {
-
-      return;
-
-    }
-
-
-    if (
-      !data.sheet ||
-      !data.row ||
-      !data.column
-    ) {
-
-      return;
-
-    }
-
-
-    const allowed =
-      [
-        1,
-        5,
-        20,
-        24,
-        31,
-        35
-      ];
-
-
-    if (
-      allowed.indexOf(
-        Number(
-          data.column
-        )
-      ) === -1
-    ) {
-
-      return;
-
-    }
-
-
-    const newKey =
-      data.sheet +
-      "|" +
-      data.row +
-      "|" +
-      data.column;
-
-
-    const oldKey =
-      currentTarget
-
-        ? currentTarget.sheet +
-          "|" +
-          currentTarget.row +
-          "|" +
-          currentTarget.column
-
-        : "";
-
-
-    /*
-       Target baru
-    */
-
-    if (
-      newKey !== oldKey
-    ) {
-
-      if (scanning) {
-
-        stopCamera();
-
-      }
-
-
-      scanLocked = false;
-
-      stableCount = 0;
-
-      lastEmployee = "";
-
-
-      currentTarget = {
-
-        sheet:
-          data.sheet,
-
-        row:
-          Number(
-            data.row
-          ),
-
-        column:
-          Number(
-            data.column
-          )
-
-      };
-
-
-      targetInfo.innerText =
-        "TARGET: " +
-        data.sheet +
-        "!" +
-        getColumnName(
-          data.column
-        ) +
-        data.row;
-
-
-      resultBox.innerText =
-        "";
-
-
-      distanceBox.innerText =
-        "";
-
-
-      if (
-        data.checklist
-      ) {
-
-        renderChecklist(
-          data.checklist
-        );
-
-      }
-
-
-      /*
-         Kamera langsung ON
-      */
-
-      startCamera();
-
-
-    } else {
-
-      /*
-         PENTING:
-
-         Kalau target sudah sama tetapi
-         kamera belum menyala,
-         nyalakan juga.
-
-         Ini yang memperbaiki masalah
-         sebelumnya.
-      */
-
-      if (
-        currentTarget &&
-        !scanning
-      ) {
-
-        startCamera();
-
-      }
-
-    }
-
-
-  } catch (error) {
-
-    console.log(
-      "TARGET CHECK:",
-      error.message
-    );
-
-  } finally {
-
-    targetChecking = false;
-
-  }
-
-}
-
-
-/* =====================================================
-   START TARGET MONITOR
-===================================================== */
-
-function startTargetMonitor() {
-
-  checkTarget();
-
-
-  targetMonitor =
-    setInterval(
-      checkTarget,
-      500
-    );
-
-}
-
-
-/* =====================================================
-   LOAD MODELS
-===================================================== */
-
-async function loadModels() {
-
-  if (modelsLoaded) {
-    return;
-  }
-
-
-  setStatus(
-    "LOADING FACE MODEL..."
-  );
-
-
-  await faceapi.nets
-    .tinyFaceDetector
-    .loadFromUri(
-      MODEL_URL
-    );
-
-
-  await faceapi.nets
-    .faceLandmark68TinyNet
-    .loadFromUri(
-      MODEL_URL
-    );
-
-
-  await faceapi.nets
-    .faceRecognitionNet
-    .loadFromUri(
-      MODEL_URL
-    );
-
-
-  modelsLoaded = true;
-
-}
-
-
-/* =====================================================
-   GET DATABASE
-===================================================== */
-
-async function getFaceDatabase() {
-
-  return await apiRequest(
-    "faces",
-    {},
-    30000
-  );
-
-}
-
-
-/* =====================================================
-   GET PHOTO
-===================================================== */
-
-async function getFacePhoto(
-  row
-) {
-
-  return await apiRequest(
-    "photo",
-    {
-      row:
-        row
-    },
-    30000
-  );
-
-}
-
-
-/* =====================================================
-   LOAD DATABASE
-===================================================== */
-
-async function loadDatabase() {
-
-  if (databaseLoaded) {
-    return;
-  }
-
-
-  setStatus(
-    "LOADING PHOTO DATABASE..."
-  );
-
-
-  const data =
-    await getFaceDatabase();
-
-
-  if (
-    !data ||
-    !data.ok
-  ) {
-
-    throw new Error(
-      data &&
-      data.message
-        ? data.message
-        : "FACE DATABASE ERROR"
-    );
-
-  }
-
-
-  employees =
-    Array.isArray(
-      data.faces
+  sheet
+    .getRange(
+      "AL2:AM10"
     )
-      ? data.faces
-      : [];
-
-
-  if (
-    employees.length === 0
-  ) {
-
-    throw new Error(
-      "NO EMPLOYEE PHOTO FOUND"
-    );
-
-  }
-
-
-  databaseInfo.innerText =
-    "PHOTO DATABASE: " +
-    employees.length +
-    " EMPLOYEE";
-
-
-  const labeledDescriptors =
-    [];
-
-
-  /*
-     6 foto sekaligus
-  */
-
-  const CONCURRENCY = 6;
-
-
-  let nextIndex = 0;
-
-  let completed = 0;
-
-
-  async function worker() {
-
-    while (true) {
-
-      const index =
-        nextIndex++;
-
-
-      if (
-        index >=
-        employees.length
-      ) {
-
-        return;
-
-      }
-
-
-      const employee =
-        employees[index];
-
-
-      try {
-
-        const photo =
-          await getFacePhoto(
-            employee.row
-          );
-
-
-        if (
-          photo &&
-          photo.ok &&
-          photo.image
-        ) {
-
-          const image =
-            await faceapi.fetchImage(
-              photo.image
-            );
-
-
-          const detection =
-            await faceapi
-              .detectSingleFace(
-
-                image,
-
-                new faceapi
-                  .TinyFaceDetectorOptions({
-
-                    inputSize:
-                      160,
-
-                    scoreThreshold:
-                      0.5
-
-                  })
-
-              )
-              .withFaceLandmarks(
-                true
-              )
-              .withFaceDescriptor();
-
-
-          if (detection) {
-
-            labeledDescriptors.push(
-
-              new faceapi
-                .LabeledFaceDescriptors(
-
-                  String(
-                    employee.employeeId
-                  ),
-
-                  [
-                    detection.descriptor
-                  ]
-
-                )
-
-            );
-
-          }
-
-        }
-
-
-      } catch (error) {
-
-        console.log(
-          "PHOTO ERROR:",
-          employee.employeeId
-        );
-
-      }
-
-
-      completed++;
-
-
-      if (
-        completed ===
-          employees.length ||
-
-        completed % 10 === 0
-      ) {
-
-        databaseInfo.innerText =
-          "LOADING FACE " +
-          completed +
-          "/" +
-          employees.length;
-
-      }
-
-    }
-
-  }
-
-
-  const workers = [];
-
-
-  const workerCount =
-    Math.min(
-      CONCURRENCY,
-      employees.length
+    .setValues(
+      values
     );
 
 
-  for (
-    let i = 0;
-    i < workerCount;
-    i++
-  ) {
-
-    workers.push(
-      worker()
+  sheet
+    .getRange(
+      "AL1:AM10"
+    )
+    .setVerticalAlignment(
+      "middle"
+    )
+    .setBorder(
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
     );
 
-  }
+
+  sheet
+    .getRange("AL1:AM1")
+    .setFontWeight("bold")
+    .setHorizontalAlignment(
+      "center"
+    )
+    .setFontSize(14);
 
 
-  await Promise.all(
-    workers
+  sheet
+    .getRange("AL2:AL10")
+    .setFontWeight("bold");
+
+
+  sheet.setColumnWidth(
+    38,
+    170
+  );
+
+  sheet.setColumnWidth(
+    39,
+    250
   );
 
 
-  if (
-    labeledDescriptors.length === 0
-  ) {
-
-    throw new Error(
-      "NO FACE DESCRIPTOR FOUND"
-    );
-
-  }
-
-
-  faceMatcher =
-    new faceapi.FaceMatcher(
-
-      labeledDescriptors,
-
-      MATCH_THRESHOLD
-
-    );
-
-
-  databaseLoaded = true;
-
-
-  databaseInfo.innerText =
-    "FACE READY: " +
-    labeledDescriptors.length +
-    " / " +
-    employees.length +
-    " EMPLOYEE";
-
-
-  setStatus(
-    "FACE DATABASE READY"
-  );
+  SpreadsheetApp.flush();
 
 }
 
 
-/* =====================================================
-   PRELOAD
-===================================================== */
+/* =========================================================
+   COLUMN NUMBER → LETTER
+   ========================================================= */
 
-async function preloadFaceSystem() {
-
-  if (preloadPromise) {
-
-    return preloadPromise;
-
-  }
-
-
-  preloadPromise =
-    (async function() {
-
-      /*
-         Model dulu.
-         Kemudian database.
-
-         Tidak membuat API faces
-         bertabrakan dengan model.
-      */
-
-      await loadModels();
-
-      await loadDatabase();
-
-
-      setStatus(
-        "FACE SYSTEM READY"
-      );
-
-    })()
-    .catch(
-      function(error) {
-
-        console.error(
-          "PRELOAD ERROR:",
-          error
-        );
-
-
-        resultBox.innerText =
-          error.message ||
-          "FACE SYSTEM ERROR";
-
-
-        setStatus(
-          "FACE SYSTEM ERROR"
-        );
-
-
-        throw error;
-
-      }
-    );
-
-
-  return preloadPromise;
-
-}
-
-
-/* =====================================================
-   SEND SCAN
-===================================================== */
-
-async function sendScanToSheet(
-  employeeId,
-  employeeName
+function columnToLetterFace(
+  column
 ) {
 
-  return await apiRequest(
+  let letter = "";
 
-    "scan",
 
-    {
+  while (column > 0) {
 
-      employeeId:
-        employeeId,
+    const temp =
+      (column - 1) % 26;
 
-      employeeName:
-        employeeName
 
-    },
+    letter =
+      String.fromCharCode(
+        temp + 65
+      ) +
+      letter;
 
-    15000
 
+    column =
+      Math.floor(
+        (column - temp - 1) / 26
+      );
+
+  }
+
+
+  return letter;
+
+}
+
+
+/* =========================================================
+   TEST
+   ========================================================= */
+
+function TEST_FACE_SELECTION() {
+
+  const ss =
+    SpreadsheetApp
+      .getActiveSpreadsheet();
+
+
+  let control =
+    ss.getSheetByName(
+      FACE_CONTROL_SHEET
+    );
+
+
+  if (!control) {
+
+    control =
+      ss.insertSheet(
+        FACE_CONTROL_SHEET
+      );
+
+    control.hideSheet();
+
+  }
+
+
+  control
+    .getRange("A1:E1")
+    .setValues([[
+      "TEST",
+      999,
+      1,
+      new Date(),
+      "READY"
+    ]]);
+
+
+  SpreadsheetApp.flush();
+
+
+  Logger.log(
+    "FACE SELECTION TEST BERHASIL"
   );
 
 }
-
-
-/* =====================================================
-   START CAMERA
-===================================================== */
-
-async function startCamera() {
-
-  /*
-     Jangan start dua kali.
-  */
-
-  if (scanning) {
-    return;
-  }
-
-
-  try {
-
-    /*
-       CAMERA DIBUKA DULU.
-
-       Tidak menunggu database.
-    */
-
-    if (
-      !cameraStream
-    ) {
-
-      setStatus(
-        "STARTING CAMERA..."
-      );
-
-
-      cameraStream =
-        await navigator
-          .mediaDevices
-          .getUserMedia({
-
-            video: {
-
-              facingMode:
-                "user",
-
-              width: {
-                ideal: 640
-              },
-
-              height: {
-                ideal: 480
-              },
-
-              frameRate: {
-                ideal: 20,
-                max: 24
-              }
-
-            },
-
-            audio: false
-
-          });
-
-    }
-
-
-    video.srcObject =
-      cameraStream;
-
-
-    video.style.display =
-      "block";
-
-
-    placeholder.style.display =
-      "none";
-
-
-    await video.play();
-
-
-    scanning = true;
-
-    scanLocked = false;
-
-    stableCount = 0;
-
-    lastEmployee = "";
-
-
-    setStatus(
-      "PREPARING FACE..."
-    );
-
-
-    /*
-       Setelah kamera sudah terlihat,
-       baru tunggu model + database.
-
-       Jadi user tidak merasa camera
-       sedang menunggu loading.
-    */
-
-    await preloadFaceSystem();
-
-
-    if (!scanning) {
-      return;
-    }
-
-
-    setStatus(
-      "LOOK AT THE CENTER"
-    );
-
-
-    /*
-       Mulai scan
-    */
-
-    scanFace();
-
-
-  } catch (error) {
-
-    console.error(
-      "CAMERA ERROR:",
-      error
-    );
-
-
-    scanning = false;
-
-
-    setStatus(
-      "CAMERA ERROR"
-    );
-
-
-    resultBox.innerText =
-      error.message ||
-      "CAMERA ERROR";
-
-
-    /*
-       Jangan hapus currentTarget.
-
-       Supaya setelah error,
-       target tetap ada dan bisa
-       dicoba lagi.
-    */
-
-  }
-
-}
-
-
-/* =====================================================
-   STOP CAMERA
-===================================================== */
-
-function stopCamera() {
-
-  scanning = false;
-
-
-  if (cameraStream) {
-
-    cameraStream
-      .getTracks()
-      .forEach(
-        function(track) {
-
-          track.stop();
-
-        }
-      );
-
-  }
-
-
-  cameraStream = null;
-
-
-  video.srcObject =
-    null;
-
-
-  video.style.display =
-    "none";
-
-
-  placeholder.style.display =
-    "block";
-
-
-  placeholder.innerText =
-    "WAITING FOR TARGET...";
-
-
-  stableCount = 0;
-
-  lastEmployee = "";
-
-}
-
-
-/* =====================================================
-   FIND FACE MOST CENTER
-===================================================== */
-
-function findCenterFace(
-  detections
-) {
-
-  if (
-    !detections ||
-    detections.length === 0
-  ) {
-
-    return null;
-
-  }
-
-
-  const width =
-    video.videoWidth;
-
-
-  const height =
-    video.videoHeight;
-
-
-  if (
-    !width ||
-    !height
-  ) {
-
-    return null;
-
-  }
-
-
-  const centerX =
-    width / 2;
-
-
-  const centerY =
-    height / 2;
-
-
-  let selected =
-    null;
-
-
-  let bestDistance =
-    Infinity;
-
-
-  detections.forEach(
-    function(item) {
-
-      const box =
-        item.detection.box;
-
-
-      const faceCenterX =
-        box.x +
-        box.width / 2;
-
-
-      const faceCenterY =
-        box.y +
-        box.height / 2;
-
-
-      const dx =
-        (
-          faceCenterX -
-          centerX
-        ) / width;
-
-
-      const dy =
-        (
-          faceCenterY -
-          centerY
-        ) / height;
-
-
-      const distance =
-        Math.sqrt(
-          dx * dx +
-          dy * dy
-        );
-
-
-      /*
-         Wajah terlalu jauh dari
-         tengah tidak dipilih.
-      */
-
-      if (
-        distance >
-        CENTER_TOLERANCE
-      ) {
-
-        return;
-
-      }
-
-
-      /*
-         Pilih wajah yang paling
-         dekat dengan tengah.
-      */
-
-      if (
-        distance <
-        bestDistance
-      ) {
-
-        bestDistance =
-          distance;
-
-        selected =
-          item;
-
-      }
-
-    }
-  );
-
-
-  return selected;
-
-}
-
-
-/* =====================================================
-   FACE SCAN
-===================================================== */
-
-async function scanFace() {
-
-  if (!scanning) {
-    return;
-  }
-
-
-  /*
-     Kalau database belum siap,
-     jangan melakukan detection.
-  */
-
-  if (
-    !modelsLoaded ||
-    !faceMatcher
-  ) {
-
-    setTimeout(
-      scanFace,
-      200
-    );
-
-    return;
-
-  }
-
-
-  try {
-
-    /*
-       DETECT SEMUA WAJAH
-
-       Kemudian kita pilih yang
-       paling tengah.
-    */
-
-    const detections =
-      await faceapi
-        .detectAllFaces(
-
-          video,
-
-          new faceapi
-            .TinyFaceDetectorOptions({
-
-              inputSize:
-                DETECTOR_INPUT_SIZE,
-
-              scoreThreshold:
-                0.50
-
-            })
-
-        )
-        .withFaceLandmarks(
-          true
-        )
-        .withFaceDescriptors();
-
-
-    /*
-       Tidak ada wajah
-    */
-
-    if (
-      !detections ||
-      detections.length === 0
-    ) {
-
-      resultBox.innerText =
-        "NO FACE";
-
-
-      distanceBox.innerText =
-        "";
-
-
-      stableCount = 0;
-
-      lastEmployee = "";
-
-
-      setStatus(
-        "LOOK AT THE CENTER"
-      );
-
-
-      setTimeout(
-        scanFace,
-        SCAN_INTERVAL
-      );
-
-
-      return;
-
-    }
-
-
-    /*
-       PILIH WAJAH PALING TENGAH
-    */
-
-    const detection =
-      findCenterFace(
-        detections
-      );
-
-
-    /*
-       Tidak ada wajah yang cukup
-       dekat dengan tengah.
-    */
-
-    if (!detection) {
-
-      resultBox.innerText =
-        "MOVE TO CENTER";
-
-
-      distanceBox.innerText =
-        "";
-
-
-      stableCount = 0;
-
-      lastEmployee = "";
-
-
-      setStatus(
-        "FACE MUST BE IN CENTER"
-      );
-
-
-      setTimeout(
-        scanFace,
-        SCAN_INTERVAL
-      );
-
-
-      return;
-
-    }
-
-
-    /*
-       MATCH FACE
-    */
-
-    const bestMatch =
-      faceMatcher.findBestMatch(
-        detection.descriptor
-      );
-
-
-    const employeeId =
-      bestMatch.label;
-
-
-    const distance =
-      bestMatch.distance;
-
-
-    distanceBox.innerText =
-      "DISTANCE: " +
-      distance.toFixed(4);
-
-
-    /*
-       UNKNOWN
-    */
-
-    if (
-      employeeId ===
-      "unknown"
-    ) {
-
-      resultBox.innerText =
-        "UNKNOWN";
-
-
-      stableCount = 0;
-
-      lastEmployee = "";
-
-
-      setStatus(
-        "FACE NOT MATCHED"
-      );
-
-
-      setTimeout(
-        scanFace,
-        SCAN_INTERVAL
-      );
-
-
-      return;
-
-    }
-
-
-    /*
-       Cari employee
-    */
-
-    const employee =
-      employees.find(
-        function(item) {
-
-          return String(
-            item.employeeId
-          ) === String(
-            employeeId
-          );
-
-        }
-      );
-
-
-    const employeeName =
-      employee
-        ? employee.name
-        : "";
-
-
-    /*
-       STABLE MATCH
-    */
-
-    if (
-      lastEmployee ===
-      employeeId
-    ) {
-
-      stableCount++;
-
-    } else {
-
-      lastEmployee =
-        employeeId;
-
-      stableCount = 1;
-
-    }
-
-
-    resultBox.innerText =
-      employeeId +
-      " - " +
-      employeeName;
-
-
-    setStatus(
-      "MATCH " +
-      stableCount +
-      "/" +
-      REQUIRED_STABLE_MATCH
-    );
-
-
-    /*
-       VERIFIED
-    */
-
-    if (
-
-      stableCount >=
-        REQUIRED_STABLE_MATCH &&
-
-      !scanLocked
-
-    ) {
-
-      scanLocked = true;
-
-
-      const targetAtScan =
-        currentTarget
-          ? {
-
-              sheet:
-                currentTarget.sheet,
-
-              row:
-                currentTarget.row,
-
-              column:
-                currentTarget.column
-
-            }
-          : null;
-
-
-      if (!targetAtScan) {
-
-        scanLocked = false;
-
-        return;
-
-      }
-
-
-      setStatus(
-        "FACE VERIFIED"
-      );
-
-
-      resultBox.innerText =
-        "✓ " +
-        employeeId +
-        " - " +
-        employeeName;
-
-
-      try {
-
-        const result =
-          await sendScanToSheet(
-
-            employeeId,
-
-            employeeName
-
-          );
-
-
-        /*
-           BERHASIL
-        */
-
-        if (
-          result &&
-          result.ok
-        ) {
-
-          const employeeColumns =
-            [
-              1,
-              20,
-              31
-            ];
-
-
-          const isEmployeeScan =
-            employeeColumns
-              .indexOf(
-                Number(
-                  targetAtScan.column
-                )
-              ) !== -1;
-
-
-          if (
-            isEmployeeScan
-          ) {
-
-            resultBox.innerText =
-              "✓ EMPLOYEE SAVED\n" +
-              employeeId +
-              " - " +
-              employeeName;
-
-          } else {
-
-            resultBox.innerText =
-              "✓ TIME IN SAVED\n" +
-              employeeName +
-              "\n" +
-              (
-                result.timeIn ||
-                ""
-              );
-
-          }
-
-
-          setStatus(
-            "SCAN SAVED"
-          );
-
-
-          /*
-             MATIKAN CAMERA
-          */
-
-          stopCamera();
-
-
-          currentTarget =
-            null;
-
-
-          scanLocked =
-            false;
-
-
-          stableCount =
-            0;
-
-
-          lastEmployee =
-            "";
-
-
-          return;
-
-        }
-
-
-        /*
-           DITOLAK API
-        */
-
-        scanLocked =
-          false;
-
-
-        stableCount =
-          0;
-
-
-        lastEmployee =
-          "";
-
-
-        setStatus(
-          "SCAN REJECTED"
-        );
-
-
-        resultBox.innerText =
-          result &&
-          result.message
-            ? result.message
-            : "SCAN REJECTED";
-
-
-        /*
-           Coba lagi
-        */
-
-        if (scanning) {
-
-          setTimeout(
-            scanFace,
-            500
-          );
-
-        }
-
-
-        return;
-
-
-      } catch (error) {
-
-        scanLocked =
-          false;
-
-
-        stableCount =
-          0;
-
-
-        lastEmployee =
-          "";
-
-
-        setStatus(
-          "SCAN ERROR"
-        );
-
-
-        resultBox.innerText =
-          error.message ||
-          "SCAN ERROR";
-
-
-        console.error(
-          "SAVE ERROR:",
-          error
-        );
-
-
-        if (scanning) {
-
-          setTimeout(
-            scanFace,
-            500
-          );
-
-        }
-
-
-        return;
-
-      }
-
-    }
-
-
-  } catch (error) {
-
-    console.error(
-      "FACE SCAN ERROR:",
-      error
-    );
-
-  }
-
-
-  /*
-     NEXT SCAN = 0.5 SECOND
-  */
-
-  if (scanning) {
-
-    setTimeout(
-      scanFace,
-      SCAN_INTERVAL
-    );
-
-  }
-
-}
-
-
-/* =====================================================
-   PAGE LOAD
-===================================================== */
-
-window.addEventListener(
-  "load",
-  function() {
-
-    setStatus(
-      "PREPARING FACE SYSTEM..."
-    );
-
-
-    targetInfo.innerText =
-      "WAITING FOR TARGET";
-
-
-    databaseInfo.innerText =
-      "PREPARING FACE DATABASE...";
-
-
-    /*
-       PRELOAD DI BACKGROUND.
-
-       Tidak menghalangi camera.
-    */
-
-    preloadFaceSystem()
-      .catch(
-        function(error) {
-
-          console.error(
-            error
-          );
-
-        }
-      );
-
-
-    /*
-       Ambil target dari URL.
-       Kalau ada target,
-       kamera langsung ON.
-    */
-
-    setTargetFromUrl();
-
-
-    /*
-       Monitor perubahan cell.
-    */
-
-    startTargetMonitor();
-
-  }
-);
-
-</script>
-
-</body>
-</html>
