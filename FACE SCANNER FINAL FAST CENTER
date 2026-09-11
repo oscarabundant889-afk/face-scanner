@@ -3158,11 +3158,11 @@ async function startCamera() {
 
   try {
 
-    if (!stream) {
+    if (!cameraStream) {
 
-      stream =
-        await navigator.mediaDevices
-          .getUserMedia({
+     cameraStream =
+  await navigator.mediaDevices
+    .getUserMedia({
 
             video: {
 
@@ -3190,7 +3190,7 @@ async function startCamera() {
 
 
     video.srcObject =
-      stream;
+  cameraStream;
 
 
     await video.play();
@@ -3376,10 +3376,10 @@ function stopCamera() {
 
 
   if (
-    stream
+    cameraStream
   ) {
 
-    stream
+    cameraStream
       .getTracks()
       .forEach(
         function(track) {
@@ -3390,7 +3390,7 @@ function stopCamera() {
       );
 
 
-    stream =
+    cameraStream =
       null;
 
   }
