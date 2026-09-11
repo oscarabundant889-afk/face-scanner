@@ -2497,14 +2497,44 @@ async function checkTarget() {
 
     await startCamera();
 
-  } catch (error) {
 
-    console.log(
-      "TARGET CHECK ERROR:",
-      error.message
+} catch (error) {
+
+  console.error(
+    "TARGET CHECK ERROR:",
+    error.message
+  );
+
+  /*
+     Friendly message untuk Time In
+     jika Remark / Room belum diisi.
+  */
+
+  if (
+    currentTarget &&
+    [5, 24, 35].includes(
+      Number(currentTarget.column)
+    )
+  ) {
+
+    setStatus(
+      "ACTION REQUIRED"
     );
 
-  } finally {
+    showWarning(
+      "Please enter a Remark or Room before scanning Time In."
+    );
+
+    stopCamera();
+
+    return;
+
+  }
+
+}
+
+    
+   finally {
 
     targetChecking =
       false;
