@@ -2471,20 +2471,9 @@ async function checkTarget() {
         : "";
 
 
-    /*
-       TARGET SAMA
-       → jangan restart camera
-    */
 
-    if (
-      newKey ===
-      oldKey
-    ) {
-
-      return;
-
-    }
-
+jangan restart camera
+    
 
     /*
        TARGET BARU
@@ -2604,7 +2593,7 @@ async function checkTarget() {
 
   if (
     currentTarget &&
-    [5, 24, 35].includes(
+    [5, 35].includes(
       Number(currentTarget.column)
     )
   ) {
