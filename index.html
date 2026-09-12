@@ -627,166 +627,235 @@ function apiRequest(
   timeoutMs = 30000
 ) {
 
+  /*
+     API READ:
+     faces / photo / target
+     boleh retry jika Apps Script sedang lambat/cold start.
+
+     API WRITE:
+     scan
+     TIDAK retry otomatis supaya tidak berisiko
+     melakukan scan dua kali.
+  */
+
+  const retryable =
+    ["faces", "photo", "target"].includes(action);
+
+  const maxAttempts =
+    retryable ? 3 : 1;
+
   return new Promise(
     function(
       resolve,
       reject
     ) {
 
-      const callbackName =
-        "FACE_CB_" +
-        Date.now() +
-        "_" +
-        Math.random()
-          .toString(36)
-          .slice(2);
+      let attempt = 0;
+
+      function runAttempt() {
+
+        attempt++;
+
+        const callbackName =
+          "FACE_CB_" +
+          Date.now() +
+          "_" +
+          Math.random()
+            .toString(36)
+            .slice(2);
+
+        const script =
+          document.createElement(
+            "script"
+          );
+
+        let finished =
+          false;
+
+        const thisTimeout =
+          retryable
+            ? Math.max(
+                timeoutMs,
+                45000
+              )
+            : timeoutMs;
+
+        const timeout =
+          setTimeout(
+            function() {
+
+              if (finished) {
+                return;
+              }
+
+              finished =
+                true;
+
+              cleanup();
+
+              if (
+                retryable &&
+                attempt < maxAttempts
+              ) {
+
+                setStatus(
+                  "RETRYING FACE API " +
+                  attempt +
+                  "/" +
+                  maxAttempts
+                );
+
+                setTimeout(
+                  runAttempt,
+                  1200
+                );
+
+                return;
+              }
+
+              reject(
+                new Error(
+                  "API TIMEOUT: " +
+                  action
+                )
+              );
+
+            },
+            thisTimeout
+          );
 
 
-      const script =
-        document.createElement(
-          "script"
-        );
+        window[callbackName] =
+          function(data) {
+
+            if (finished) {
+              return;
+            }
+
+            finished =
+              true;
+
+            cleanup();
+
+            resolve(
+              data
+            );
+
+          };
 
 
-      let finished =
-        false;
-
-
-      const timeout =
-        setTimeout(
+        script.onerror =
           function() {
 
             if (finished) {
               return;
             }
 
-
             finished =
               true;
 
-
             cleanup();
 
+            if (
+              retryable &&
+              attempt < maxAttempts
+            ) {
+
+              setStatus(
+                "RECONNECTING FACE API " +
+                attempt +
+                "/" +
+                maxAttempts
+              );
+
+              setTimeout(
+                runAttempt,
+                1200
+              );
+
+              return;
+            }
 
             reject(
               new Error(
-                "API TIMEOUT: " +
+                "API CONNECTION ERROR: " +
                 action
               )
             );
 
-          },
-          timeoutMs
-        );
+          };
 
 
-      window[callbackName] =
-        function(data) {
-
-          if (finished) {
-            return;
-          }
-
-
-          finished =
-            true;
-
-
-          cleanup();
-
-
-          resolve(
-            data
-          );
-
-        };
-
-
-      script.onerror =
-        function() {
-
-          if (finished) {
-            return;
-          }
-
-
-          finished =
-            true;
-
-
-          cleanup();
-
-
-          reject(
-            new Error(
-              "API CONNECTION ERROR: " +
-              action
-            )
-          );
-
-        };
-
-
-      let url =
-        API_URL +
-        "?action=" +
-        encodeURIComponent(
-          action
-        ) +
-        "&callback=" +
-        encodeURIComponent(
-          callbackName
-        ) +
-        "&t=" +
-        Date.now();
-
-
-      Object.keys(params)
-        .forEach(
-          function(key) {
-
-            url +=
-              "&" +
-              encodeURIComponent(
-                key
-              ) +
-              "=" +
-              encodeURIComponent(
-                params[key]
-              );
-
-          }
-        );
-
-
-      script.src =
-        url;
-
-
-      document.body.appendChild(
-        script
-      );
-
-
-      function cleanup() {
-
-        clearTimeout(
-          timeout
-        );
-
-
-        try {
-
-          delete window[
+        let url =
+          API_URL +
+          "?action=" +
+          encodeURIComponent(
+            action
+          ) +
+          "&callback=" +
+          encodeURIComponent(
             callbackName
-          ];
+          ) +
+          "&t=" +
+          Date.now() +
+          "_" +
+          Math.random()
+            .toString(36)
+            .slice(2);
 
-        } catch (e) {}
+
+        Object.keys(params)
+          .forEach(
+            function(key) {
+
+              url +=
+                "&" +
+                encodeURIComponent(
+                  key
+                ) +
+                "=" +
+                encodeURIComponent(
+                  params[key]
+                );
+
+            }
+          );
 
 
-        script.remove();
+        script.async =
+          true;
+
+        script.src =
+          url;
+
+        document.head.appendChild(
+          script
+        );
+
+
+        function cleanup() {
+
+          clearTimeout(
+            timeout
+          );
+
+          try {
+
+            delete window[
+              callbackName
+            ];
+
+          } catch (e) {}
+
+
+          script.remove();
+
+        }
 
       }
+
+
+      runAttempt();
 
     }
   );
@@ -1592,7 +1661,13 @@ async function buildFaceCache(
 
 
 /* =========================================================
-   LOAD DATABASE ONCE
+   LOAD DATABASE ONCE PER PAGE SESSION
+
+   Saat halaman dibuka/di-refresh, database dibaca sekali.
+   Setelah FACE SYSTEM READY, target scan tidak memanggil
+   faces lagi. Selama halaman tetap terbuka 24 jam,
+   descriptor yang sudah ada dipakai terus dari memory/cache.
+   Jika ada karyawan/foto baru, refresh halaman secara manual.
    ========================================================= */
 
 async function loadDatabaseOnce() {
