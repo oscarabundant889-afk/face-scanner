@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -2429,6 +2430,20 @@ function columnToLetter(
 
 
 /* =========================================================
+   TARGET KEY
+   ========================================================= */
+function makeTargetKey(targetOrData) {
+  if (!targetOrData || !targetOrData.sheet || !targetOrData.row || !targetOrData.column) {
+    return "";
+  }
+
+  return String(targetOrData.sheet) + "|" +
+         String(targetOrData.row) + "|" +
+         String(targetOrData.column);
+}
+
+
+/* =========================================================
    TIME
    ========================================================= */
 
@@ -3287,13 +3302,12 @@ function startTargetMonitor() {
 async function startCamera() {
 
   /*
-     Jangan hidupkan camera kalau:
-
-     - sedang scanning
-     - sedang hold
-     - tidak ada target
-    */
-
+     CAMERA HANYA BOLEH ON JIKA:
+     - ada target
+     - target valid
+     - tidak hold
+     - belum scanning
+  */
   if (
     scanning ||
     cameraHold ||
@@ -3302,368 +3316,101 @@ async function startCamera() {
     return;
   }
 
-
-  /*
-     FACE SYSTEM HARUS READY
-  */
-
   if (
     !modelsLoaded ||
     !databaseLoaded ||
     !faceMatcher
   ) {
-
-    setStatus(
-      "FACE SYSTEM NOT READY"
-    );
-
+    setStatus("FACE SYSTEM NOT READY");
     return;
   }
 
+  const requestToken = ++cameraRequestToken;
+  let stream = cameraStream;
 
   try {
 
-    /*
-       ============================================
-       CAMERA REQUEST TOKEN
-       ============================================
-
-       Ini mencegah:
-
-       startCamera()
-            ↓
-       getUserMedia() menunggu
-            ↓
-       stopCamera()
-            ↓
-       request lama selesai
-            ↓
-       CAMERA hidup lagi
-
-       Sekarang request lama dianggap BATAL.
-    */
-
-    const requestToken =
-      ++cameraRequestToken;
-
-
-    let stream =
-      cameraStream;
-
-
-    /*
-       ============================================
-       REQUEST CAMERA
-       ============================================
-    */
-
-    if (
-      !stream
-    ) {
-
-      stream =
-        await navigator.mediaDevices
-          .getUserMedia({
-
-            video: {
-
-              width: {
-                ideal:
-                  CAMERA_WIDTH
-              },
-
-              height: {
-                ideal:
-                  CAMERA_HEIGHT
-              },
-
-              facingMode:
-                "user"
-            },
-
-            audio:
-              false
-          });
-
-
-      /*
-         =========================================
-         CHECK SETELAH getUserMedia SELESAI
-         =========================================
-      */
-
-      if (
-        requestToken !==
-        cameraRequestToken ||
-
-        cameraHold ||
-
-        !currentTarget
-      ) {
-
-        stream
-          .getTracks()
-          .forEach(
-            function(track) {
-              try {
-                track.stop();
-              } catch (e) {}
-            }
-          );
-
-        return;
-      }
-
-
-      cameraStream =
-        stream;
+    if (!stream) {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: CAMERA_WIDTH },
+          height: { ideal: CAMERA_HEIGHT },
+          facingMode: "user"
+        },
+        audio: false
+      });
     }
 
-
     /*
-       CHECK LAGI
-       sebelum camera benar-benar hidup
+       JIKA STOP TERJADI SAAT getUserMedia() MENUNGGU,
+       STREAM BARU LANGSUNG DIMATIKAN.
     */
-
     if (
-      requestToken !==
-      cameraRequestToken ||
-
+      requestToken !== cameraRequestToken ||
       cameraHold ||
-
       !currentTarget
     ) {
+      try {
+        stream.getTracks().forEach(function(track) {
+          track.stop();
+        });
+      } catch (e) {}
 
       return;
     }
 
+    cameraStream = stream;
 
-    /*
-       ENABLE CAMERA
-    */
+    cameraStream.getVideoTracks().forEach(function(track) {
+      track.enabled = true;
+    });
 
-    cameraStream
-      .getVideoTracks()
-      .forEach(
-        function(track) {
-
-          track.enabled =
-            true;
-
-        }
-      );
-
-
-    video.srcObject =
-      cameraStream;
-
+    video.srcObject = cameraStream;
 
     await video.play();
 
-
     /*
-       =========================================
-       CHECK TERAKHIR
-       =========================================
+       CHECK TERAKHIR SEBELUM CAMERA DIANGGAP AKTIF.
     */
-
     if (
-      requestToken !==
-      cameraRequestToken ||
-
+      requestToken !== cameraRequestToken ||
       cameraHold ||
-
       !currentTarget
     ) {
-
       stopCamera();
-
       return;
     }
 
+    cameraBox.classList.add("active");
+    scanning = true;
 
-    /*
-       CAMERA BENAR-BENAR ON
-    */
-
-    cameraBox.classList.add(
-      "active"
-    );
-
-    scanning =
-      true;
-
-    scanLocked =
-      false;
-
-    stableCount =
-      0;
-
-    lastEmployee =
-      "";
-
-
-    setStatus(
-      "CAMERA READY"
-    );
-
-    resultBox.innerText =
-      "LOOK AT THE CAMERA";
-
-
+    setStatus("READY TO SCAN");
     startScanLoop();
-
 
   } catch (error) {
 
-    console.error(
-      "CAMERA ERROR:",
-      error
-    );
+    /*
+       Jika request sudah dibatalkan, jangan tampilkan error.
+    */
+    if (requestToken !== cameraRequestToken) {
+      return;
+    }
 
-    scanning =
-      false;
+    console.error("CAMERA ERROR:", error);
 
-    setStatus(
-      "CAMERA ERROR"
-    );
+    scanning = false;
+
+    setStatus("CAMERA ERROR");
 
     resultBox.innerText =
-      "PLEASE ALLOW CAMERA ACCESS";
+      error && error.message
+        ? error.message
+        : "CAMERA ERROR";
   }
 }
 
 
 
-
-  
-
-/* =========================================================
-   SCAN LOOP
-   ========================================================= */
-
-function startScanLoop() {
-
-  if (
-    scanTimer
-  ) {
-
-    return;
-
-  }
-
-
-  scanTimer =
-    setInterval(
-      scanFace,
-      SCAN_INTERVAL
-    );
-
-
-  /*
-     Scan langsung.
-  */
-
-  scanFace();
-
-}
-
-
-function stopCamera() {
-
-  /*
-     ============================================
-     BATALKAN SEMUA CAMERA REQUEST LAMA
-     ============================================
-  */
-
-  cameraRequestToken++;
-
-
-  /*
-     STOP SCANNING
-  */
-
-  scanning =
-    false;
-
-  scanLocked =
-    false;
-
-  stableCount =
-    0;
-
-  lastEmployee =
-    "";
-
-
-  /*
-     STOP SCAN LOOP
-  */
-
-  if (
-    scanTimer
-  ) {
-
-    clearInterval(
-      scanTimer
-    );
-
-    scanTimer =
-      null;
-  }
-
-
-  /*
-     ============================================
-     STOP CAMERA STREAM
-     ============================================
-  */
-
-  if (
-    cameraStream
-  ) {
-
-    cameraStream
-      .getTracks()
-      .forEach(
-        function(track) {
-
-          try {
-            track.stop();
-          } catch (e) {}
-
-        }
-      );
-
-    cameraStream =
-      null;
-  }
-
-
-  /*
-     PUTUS VIDEO
-  */
-
-  try {
-
-    video.pause();
-
-  } catch (e) {}
-
-
-  video.srcObject =
-    null;
-
-
-  /*
-     HILANGKAN TAMPILAN CAMERA
-  */
-
-  cameraBox.classList.remove(
-    "active"
-  );
-}
 
 
 
