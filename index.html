@@ -2872,181 +2872,124 @@ if (!target) {
   
   
 
-
-
-
-  
-
-
-
-/* =========================================================
-   TARGET CHECK
-   ========================================================= */
-
 async function checkTarget() {
 
   /*
-     JANGAN CEK TARGET
-     SAAT CAMERA SEDANG SCAN
+     ============================================
+     TARGET MONITOR FINAL
+     ============================================
+
+     RULE:
+
+     1. Target valid
+        → CAMERA ON
+
+     2. Target tidak valid
+        → CAMERA OFF
+        → WARNING MUNCUL
+
+     3. WARNING hanya muncul SATU KALI
+        untuk target + pesan yang sama
+
+     4. User harus tekan:
+        OK atau X
+
+     5. Setelah SUCCESS:
+        → CAMERA OFF
+        → tunggu target baru
+
+     ============================================
   */
 
-  
-if (
-  targetChecking ||
-  !databaseLoaded ||
-  scanning ||
-  scanProcessing
-) {
+  if (
+    targetChecking ||
+    !databaseLoaded ||
+    scanning ||
+    scanProcessing
+  ) {
+    return;
+  }
 
-  return;
-
-}
-
-  targetChecking =
-    true;
-
+  targetChecking = true;
 
   try {
 
     const data =
       await getCurrentTarget();
 
-
     if (
       !data ||
       !data.ok
     ) {
-
       return;
-
-    }
-
-
-    if (
-      data.checklist
-    ) {
-
-      updateChecklist(
-        data.checklist
-      );
-
     }
 
 
     /*
-       TARGET TIDAK READY
+       UPDATE CHECKLIST
     */
 
+    if (
+      data.checklist
+    ) {
+      updateChecklist(
+        data.checklist
+      );
+    }
 
 
-if (
-  !data.ready
-) {
+    /*
+       VALIDATE TARGET
+    */
 
-  /*
-     STOP CAMERA
-     WITHOUT REQUESTING
-     CAMERA PERMISSION AGAIN
-  */
-
-  stopCamera();
-
-
-  /*
-     CLEAR CURRENT TARGET
-  */
-
-  currentTarget =
-    null;
-
-  scanLocked =
-    false;
-
-  stableCount =
-    0;
-
-  lastEmployee =
-    "";
-
-
-  /*
-     SHOW BEAUTIFUL WARNING
-  */
-
-if (
-  data.warning
-) {
-
-
-if (
-  data.warning &&
-  data.warning !==
-    dismissedWarning
-) {
-
-  lastWarning =
-    data.warning;
-
-  showWarning(
-    data.warning
-  );
-
-}
-
-  
-  setStatus(
-    "ACTION REQUIRED"
-  );
-
-}
-
-
-  
-  else {
-
-    targetInfo.innerText =
-      "WAITING FOR TARGET";
-
-  }
-
-
-  return;
-}
-    
-
-
-     column =
+    const column =
       Number(
-        data.column
+        data.column || 0
       );
 
+    const allowedColumns = [
+      1,   // A
+      5,   // E
+      13,  // M
+      20,  // T
+      24,  // X
+      31,  // AE
+      35   // AI
+    ];
 
-     allowed =
-      [
-        1,
-        5,
-        13,
-        20,
-        24,
-        31,
-        35
-      ];
 
+    /*
+       TIDAK ADA TARGET
+    */
 
     if (
       !data.sheet ||
       !data.row ||
-      !allowed.includes(
+      !allowedColumns.includes(
         column
       )
     ) {
 
-      return;
+      stopCamera();
 
+      currentTarget =
+        null;
+
+      cameraHold =
+        false;
+
+      targetInfo.innerText =
+        "WAITING FOR TARGET";
+
+      return;
     }
 
 
-     newKey =
+    /*
+       BUAT TARGET KEY
+    */
+
+    const newKey =
       data.sheet +
       "|" +
       data.row +
@@ -3054,149 +2997,155 @@ if (
       column;
 
 
-
-if (
-  newKey ===
-  completedTargetKey
-) {
-
-  cameraHold =
-    true;
-
-  stopCamera();
-
-  return;
-
-}
-    
-    
-
-if (
-  currentTarget &&
-  (
-    currentTarget.sheet +
-    "|" +
-    currentTarget.row +
-    "|" +
-    currentTarget.column
-  ) !==
-  newKey
-) {
-
-  dismissedWarning =
-    "";
-
-  completedTargetKey =
-    "";
-
-}
-    
-
-
-     oldKey =
-      currentTarget
-
-        ? currentTarget.sheet +
-          "|" +
-          currentTarget.row +
-          "|" +
-          currentTarget.column
-
-        : "";
-
-
     /*
-       TARGET SAMA
-       → jangan restart camera
+       ============================================
+       TARGET SUDAH SELESAI
+       ============================================
+
+       Jangan hidupkan camera lagi.
+       Tunggu target berbeda.
     */
 
     if (
       newKey ===
-      oldKey
+      completedTargetKey
     ) {
 
-       sameValidation =
-        validateBeforeCamera(
-          currentTarget,
-          data.checklist
-        );
+      cameraHold =
+        true;
 
+      stopCamera();
 
-if (!sameValidation.ok) {
+      currentTarget =
+        null;
 
-  lastWarning =
-    sameValidation.message;
+      targetInfo.innerText =
+        "WAITING FOR NEXT TARGET";
 
-  if (
-    sameValidation.message !==
-    dismissedWarning
-  ) {
-
-    showWarning(
-      sameValidation.message
-    );
-
-  }
-
-  setStatus(
-    "ACTION REQUIRED"
-  );
-
-  stopCamera();
-}
-
-      
       return;
-
     }
 
 
+    /*
+       ============================================
+       TARGET BARU
+       ============================================
+    */
+
+    const oldKey =
+      currentTarget
+        ? (
+            currentTarget.sheet +
+            "|" +
+            currentTarget.row +
+            "|" +
+            currentTarget.column
+          )
+        : "";
 
 
-/*
-   TARGET BARU
-*/
+    if (
+      newKey !== oldKey
+    ) {
 
-if (
-  newKey !==
-  completedTargetKey
-) {
+      /*
+         TARGET BERUBAH
+         maka warning lama boleh reset
+      */
 
-  cameraHold =
-    false;
+      dismissedWarning =
+        "";
 
-}
-
-if (
-  cameraHold
-) {
-
-  stopCamera();
-
-  return;
-
-}
-
-if (
-  scanning
-) {
-  stopCamera();
-}
+      cameraHold =
+        false;
+    }
 
 
-    
+    /*
+       ============================================
+       TARGET TIDAK READY
+       ============================================
+    */
 
-    scanLocked =
-      false;
+    if (
+      !data.ready
+    ) {
+
+      /*
+         CAMERA WAJIB OFF
+      */
+
+      stopCamera();
+
+      currentTarget =
+        null;
+
+      scanLocked =
+        false;
+
+      stableCount =
+        0;
+
+      lastEmployee =
+        "";
 
 
-    stableCount =
-      0;
+      /*
+         WARNING
+      */
+
+      if (
+        data.warning
+      ) {
+
+        lastWarning =
+          data.warning;
 
 
-    lastEmployee =
-      "";
+        /*
+           WARNING HANYA SEKALI.
 
+           Kalau user belum tekan OK/X:
+           warning tetap tampil.
+
+           Kalau sudah tekan OK/X:
+           warning tidak muncul lagi
+           selama pesan masih sama.
+        */
+
+        if (
+          data.warning !==
+          dismissedWarning
+        ) {
+
+          showWarning(
+            data.warning
+          );
+        }
+
+        setStatus(
+          "ACTION REQUIRED"
+        );
+
+      } else {
+
+        targetInfo.innerText =
+          "WAITING FOR TARGET";
+
+        setStatus(
+          "WAITING FOR TARGET"
+        );
+      }
+
+      return;
+    }
+
+
+    /*
+       ============================================
+       TARGET VALID
+       ============================================
+    */
 
     currentTarget = {
 
@@ -3210,7 +3159,6 @@ if (
 
       column:
         column
-
     };
 
 
@@ -3224,83 +3172,90 @@ if (
       data.row;
 
 
-    resultBox.innerText =
-      "";
-
-
-    distanceBox.innerText =
-      "";
-
-
     updateChecklist(
       data.checklist
     );
 
 
     /*
-       VALIDASI
+       ============================================
+       VALIDASI FINAL
+       ============================================
     */
 
-     validation =
+    const validation =
       validateBeforeCamera(
         currentTarget,
         data.checklist
       );
 
 
-if (
-  !validation.ok
-) {
+    if (
+      !validation.ok
+    ) {
 
-  lastWarning =
-    validation.message;
+      stopCamera();
 
-  if (
-    validation.message !==
-    dismissedWarning
-  ) {
-
-    showWarning(
-      validation.message
-    );
-
-  }
-
-  setStatus(
-    "ACTION REQUIRED"
-  );
-
-  stopCamera();
-
-  return;
-
-}
+      lastWarning =
+        validation.message;
 
 
+      if (
+        validation.message !==
+        dismissedWarning
+      ) {
 
-    
+        showWarning(
+          validation.message
+        );
+      }
+
+
+      setStatus(
+        "ACTION REQUIRED"
+      );
+
+      return;
+    }
+
 
     /*
+       ============================================
        CAMERA ON
+       ============================================
     */
 
-    await startCamera();
+    if (
+      !cameraHold &&
+      !scanning
+    ) {
+
+      await startCamera();
+    }
+
 
   } catch (error) {
 
     console.log(
       "TARGET CHECK ERROR:",
+      error &&
       error.message
+        ? error.message
+        : error
     );
 
   } finally {
 
     targetChecking =
       false;
-
   }
-
 }
+
+
+  
+
+
+
 
 
 /* =========================================================
@@ -3329,20 +3284,27 @@ function startTargetMonitor() {
 
 }
 
-
-/* =========================================================
-   START CAMERA
-   ========================================================= */
-
-
 async function startCamera() {
 
-  if (scanning || cameraHold) {
+  /*
+     Jangan hidupkan camera kalau:
+
+     - sedang scanning
+     - sedang hold
+     - tidak ada target
+    */
+
+  if (
+    scanning ||
+    cameraHold ||
+    !currentTarget
+  ) {
     return;
   }
 
+
   /*
-     FACE SYSTEM MUST BE READY
+     FACE SYSTEM HARUS READY
   */
 
   if (
@@ -3351,101 +3313,178 @@ async function startCamera() {
     !faceMatcher
   ) {
 
-    showWarning(
+    setStatus(
       "FACE SYSTEM NOT READY"
     );
 
     return;
   }
 
+
   try {
 
     /*
+       ============================================
        CAMERA REQUEST TOKEN
+       ============================================
 
-       Mencegah request getUserMedia yang masih berjalan
-       menghidupkan kamera kembali setelah stopCamera().
+       Ini mencegah:
+
+       startCamera()
+            ↓
+       getUserMedia() menunggu
+            ↓
+       stopCamera()
+            ↓
+       request lama selesai
+            ↓
+       CAMERA hidup lagi
+
+       Sekarang request lama dianggap BATAL.
     */
 
     const requestToken =
       ++cameraRequestToken;
 
-    let stream = cameraStream;
 
-    if (!stream) {
+    let stream =
+      cameraStream;
+
+
+    /*
+       ============================================
+       REQUEST CAMERA
+       ============================================
+    */
+
+    if (
+      !stream
+    ) {
 
       stream =
-        await navigator.mediaDevices.getUserMedia({
+        await navigator.mediaDevices
+          .getUserMedia({
 
-          video: {
+            video: {
 
-            width: {
-              ideal: CAMERA_WIDTH
+              width: {
+                ideal:
+                  CAMERA_WIDTH
+              },
+
+              height: {
+                ideal:
+                  CAMERA_HEIGHT
+              },
+
+              facingMode:
+                "user"
             },
 
-            height: {
-              ideal: CAMERA_HEIGHT
-            },
+            audio:
+              false
+          });
 
-            facingMode: "user"
-
-          },
-
-          audio: false
-
-        });
 
       /*
-         Kalau selama menunggu kamera ada stopCamera(),
-         atau user sudah masuk mode WAITING,
-         stream baru langsung dimatikan.
+         =========================================
+         CHECK SETELAH getUserMedia SELESAI
+         =========================================
       */
 
       if (
-        requestToken !== cameraRequestToken ||
+        requestToken !==
+        cameraRequestToken ||
+
         cameraHold ||
+
         !currentTarget
       ) {
 
         stream
           .getTracks()
-          .forEach(function(track) {
-            track.stop();
-          });
+          .forEach(
+            function(track) {
+              try {
+                track.stop();
+              } catch (e) {}
+            }
+          );
 
         return;
       }
 
+
       cameraStream =
         stream;
-
     }
 
+
     /*
-       Pastikan request lama tidak boleh meneruskan kamera.
+       CHECK LAGI
+       sebelum camera benar-benar hidup
     */
 
     if (
-      requestToken !== cameraRequestToken ||
+      requestToken !==
+      cameraRequestToken ||
+
       cameraHold ||
+
       !currentTarget
     ) {
 
       return;
     }
 
+
+    /*
+       ENABLE CAMERA
+    */
+
     cameraStream
       .getVideoTracks()
-      .forEach(function(track) {
+      .forEach(
+        function(track) {
 
-        track.enabled = true;
+          track.enabled =
+            true;
 
-      });
+        }
+      );
+
 
     video.srcObject =
       cameraStream;
 
+
     await video.play();
+
+
+    /*
+       =========================================
+       CHECK TERAKHIR
+       =========================================
+    */
+
+    if (
+      requestToken !==
+      cameraRequestToken ||
+
+      cameraHold ||
+
+      !currentTarget
+    ) {
+
+      stopCamera();
+
+      return;
+    }
+
+
+    /*
+       CAMERA BENAR-BENAR ON
+    */
 
     cameraBox.classList.add(
       "active"
@@ -3463,6 +3502,7 @@ async function startCamera() {
     lastEmployee =
       "";
 
+
     setStatus(
       "CAMERA READY"
     );
@@ -3470,7 +3510,9 @@ async function startCamera() {
     resultBox.innerText =
       "LOOK AT THE CAMERA";
 
+
     startScanLoop();
+
 
   } catch (error) {
 
@@ -3488,10 +3530,11 @@ async function startCamera() {
 
     resultBox.innerText =
       "PLEASE ALLOW CAMERA ACCESS";
-
   }
-
 }
+
+
+
 
   
 
@@ -3526,30 +3569,37 @@ function startScanLoop() {
 }
 
 
-/* =========================================================
-   STOP CAMERA
-   ========================================================= */
-
 function stopCamera() {
 
-  /* Batalkan startCamera() yang mungkin masih menunggu getUserMedia(). */
+  /*
+     ============================================
+     BATALKAN SEMUA CAMERA REQUEST LAMA
+     ============================================
+  */
+
   cameraRequestToken++;
+
+
+  /*
+     STOP SCANNING
+  */
 
   scanning =
     false;
 
-
   scanLocked =
     false;
-
 
   stableCount =
     0;
 
-
   lastEmployee =
     "";
 
+
+  /*
+     STOP SCAN LOOP
+  */
 
   if (
     scanTimer
@@ -3559,12 +3609,16 @@ function stopCamera() {
       scanTimer
     );
 
-
     scanTimer =
       null;
-
   }
 
+
+  /*
+     ============================================
+     STOP CAMERA STREAM
+     ============================================
+  */
 
   if (
     cameraStream
@@ -3575,28 +3629,49 @@ function stopCamera() {
       .forEach(
         function(track) {
 
-          track.stop();
+          try {
+            track.stop();
+          } catch (e) {}
 
         }
       );
 
-
     cameraStream =
       null;
-
   }
+
+
+  /*
+     PUTUS VIDEO
+  */
+
+  try {
+
+    video.pause();
+
+  } catch (e) {}
 
 
   video.srcObject =
     null;
 
 
+  /*
+     HILANGKAN TAMPILAN CAMERA
+  */
+
   cameraBox.classList.remove(
     "active"
   );
-
 }
 
+
+
+
+
+
+
+  
 
 /* =========================================================
    FIND CENTER FACE
