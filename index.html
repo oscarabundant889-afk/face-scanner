@@ -891,11 +891,16 @@ let preloadPromise =
 let targetChecking =
   false;
 
-  let completedTargetKey =
+let completedTargetKey =
   "";
+
+let cameraHold =
+  false;
 
 let scanProcessing =
   false;
+
+  
 
 
 let warningTimer =
@@ -2804,17 +2809,17 @@ async function checkTarget() {
      SAAT CAMERA SEDANG SCAN
   */
 
-  if (
-    targetChecking ||
-    !databaseLoaded ||
-    scanning ||
-    scanProcessing
-  ) {
+  
+if (
+  targetChecking ||
+  !databaseLoaded ||
+  scanning ||
+  scanProcessing
+) {
 
-    return;
+  return;
 
-  }
-
+}
 
   targetChecking =
     true;
@@ -2968,16 +2973,21 @@ if (
       column;
 
 
+
 if (
   newKey ===
   completedTargetKey
 ) {
+
+  cameraHold =
+    true;
 
   stopCamera();
 
   return;
 
 }
+    
     
 
 if (
@@ -3060,18 +3070,40 @@ if (!sameValidation.ok) {
     }
 
 
-    /*
-       TARGET BARU
-    */
 
-    if (
-      scanning
-    ) {
 
-      stopCamera();
+/*
+   TARGET BARU
+*/
 
-    }
+if (
+  newKey !==
+  completedTargetKey
+) {
 
+  cameraHold =
+    false;
+
+}
+
+if (
+  cameraHold
+) {
+
+  stopCamera();
+
+  return;
+
+}
+
+if (
+  scanning
+) {
+  stopCamera();
+}
+
+
+    
 
     scanLocked =
       false;
@@ -3973,11 +4005,6 @@ async function scanFace() {
 
     stopCamera();
 
-
-    /*
-       TARGET LAMA SELESAI
-    */
-
 completedTargetKey =
   currentTarget
     ? (
@@ -3989,11 +4016,11 @@ completedTargetKey =
       )
     : "";
 
+cameraHold =
+  true;
 
-    
-    currentTarget =
-      null;
-
+currentTarget =
+  null;
     
 
 
