@@ -4042,6 +4042,29 @@ window.addEventListener(
 );
 
 
+function startScanLoop() {
+
+  if (scanTimer) {
+    clearInterval(scanTimer);
+    scanTimer = null;
+  }
+
+  scanTimer = setInterval(
+    function() {
+      if (
+        scanning &&
+        !scanLocked &&
+        !scanProcessing
+      ) {
+        scanFace();
+      }
+    },
+    SCAN_INTERVAL
+  );
+}
+  
+
+
 /* =========================================================
    SAFETY
    ========================================================= */
