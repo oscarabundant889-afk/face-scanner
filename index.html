@@ -91,15 +91,157 @@ h1{
 }
 
 #warning{
-  width:320px;
-  margin:7px auto;
-  padding:9px;
-  background:#222;
-  border-radius:10px;
-  font-size:16px;
+
+  position:fixed;
+
+  left:50%;
+  top:50%;
+
+  transform:
+    translate(-50%,-50%)
+    perspective(900px)
+    rotateX(0deg);
+
+  width:360px;
+  max-width:90vw;
+
+  padding:30px 28px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #2a2a2a,
+      #111
+    );
+
+  border-radius:24px;
+
+  border:1px solid
+    rgba(255,255,255,.15);
+
+  box-shadow:
+
+    0 30px 70px
+      rgba(0,0,0,.75),
+
+    inset 0 1px 0
+      rgba(255,255,255,.15),
+
+    inset 0 -8px 20px
+      rgba(0,0,0,.5);
+
+  color:#fff;
+
+  font-size:19px;
+
   font-weight:bold;
+
+  line-height:1.5;
+
+  text-align:center;
+
+  white-space:pre-line;
+
+  z-index:99999;
+
   display:none;
-  white-space:pre-line
+
+  animation:
+    warning3D
+    .35s
+    cubic-bezier(.2,.8,.2,1);
+
+}
+
+
+/*
+   3D WARNING ANIMATION
+*/
+
+@keyframes warning3D{
+
+  0%{
+
+    opacity:0;
+
+    transform:
+      translate(-50%,-50%)
+      perspective(900px)
+      rotateX(-35deg)
+      scale(.65);
+
+  }
+
+  60%{
+
+    opacity:1;
+
+    transform:
+      translate(-50%,-50%)
+      perspective(900px)
+      rotateX(8deg)
+      scale(1.04);
+
+  }
+
+  100%{
+
+    opacity:1;
+
+    transform:
+      translate(-50%,-50%)
+      perspective(900px)
+      rotateX(0deg)
+      scale(1);
+
+  }
+
+}
+
+
+/*
+   WARNING GLOW
+*/
+
+#warning::before{
+
+  content:"⚠";
+
+  display:block;
+
+  font-size:48px;
+
+  margin-bottom:12px;
+
+  filter:
+    drop-shadow(
+      0 5px 10px
+      rgba(255,180,0,.4)
+    );
+
+}
+
+
+/*
+   DARK OVERLAY
+*/
+
+#warning::after{
+
+  content:"";
+
+  position:fixed;
+
+  inset:0;
+
+  background:
+    rgba(0,0,0,.55);
+
+  z-index:-1;
+
+  backdrop-filter:
+    blur(4px);
+
 }
 
 #distance,
@@ -2372,42 +2514,66 @@ async function checkTarget() {
        TARGET TIDAK READY
     */
 
-    if (
-      !data.ready
-    ) {
-
-      if (
-        currentTarget
-      ) {
-
-        stopCamera();
 
 
-        currentTarget =
-          null;
+if (
+  !data.ready
+) {
+
+  /*
+     STOP CAMERA
+     WITHOUT REQUESTING
+     CAMERA PERMISSION AGAIN
+  */
+
+  stopCamera();
 
 
-        scanLocked =
-          false;
+  /*
+     CLEAR CURRENT TARGET
+  */
+
+  currentTarget =
+    null;
+
+  scanLocked =
+    false;
+
+  stableCount =
+    0;
+
+  lastEmployee =
+    "";
 
 
-        stableCount =
-          0;
+  /*
+     SHOW BEAUTIFUL WARNING
+  */
+
+  if (
+    data.warning
+  ) {
+
+    showWarning(
+      data.warning
+    );
+
+    setStatus(
+      "ACTION REQUIRED"
+    );
+
+  }
+  else {
+
+    targetInfo.innerText =
+      "WAITING FOR TARGET";
+
+  }
 
 
-        lastEmployee =
-          "";
-
-      }
-
-
-      targetInfo.innerText =
-        "WAITING FOR TARGET";
-
-
-      return;
-
-    }
+  return;
+}
+    
 
 
     const column =
