@@ -739,7 +739,7 @@ const DETECTOR_INPUT_SIZE =
 
 
 const TARGET_CHECK_INTERVAL =
-  250;
+  500;
 
 
 const SCAN_INTERVAL =
@@ -747,7 +747,7 @@ const SCAN_INTERVAL =
 
 
 const WARNING_TIME =
-  0;
+  3000;
 
 
 const CENTER_TOLERANCE =
@@ -891,28 +891,13 @@ let preloadPromise =
 let targetChecking =
   false;
 
-let completedTargetKey =
-  "";
-
-let cameraHold =
-  false;
-let cameraRequestToken =
-  0;
-
-  
-
 let scanProcessing =
   false;
-
-  
 
 
 let warningTimer =
   null;
 let lastWarning =
-  "";
-
-  let dismissedWarning =
   "";
 
 /* =========================================================
@@ -933,6 +918,7 @@ function setStatus(
    WARNING
    ========================================================= */
 
+
 function showWarning(
   text
 ) {
@@ -940,6 +926,7 @@ function showWarning(
   clearTimeout(
     warningTimer
   );
+
 
   if (!text) {
 
@@ -950,14 +937,17 @@ function showWarning(
 
   }
 
+
   const parts =
     String(text).split(
       "\n\n"
     );
 
+
   const title =
     parts[0] ||
     "WARNING";
+
 
   const message =
     parts
@@ -965,52 +955,72 @@ function showWarning(
       .join("\n\n") ||
     "";
 
+
   document.getElementById(
     "warningTitle"
   ).innerText =
     title;
+
 
   document.getElementById(
     "warningMessage"
   ).innerText =
     message;
 
+
   warningBox.style.display =
     "block";
 
+
+  /*
+     AUTO CLOSE 3 DETIK
+  */
+
+  warningTimer =
+    setTimeout(
+      function() {
+
+        warningBox.style.display =
+          "none";
+
+      },
+      WARNING_TIME
+    );
+
 }
 
-
-document.getElementById(
+  document.getElementById(
   "warningClose"
 ).addEventListener(
   "click",
   function() {
 
-    dismissedWarning =
-      lastWarning;
+    clearTimeout(
+      warningTimer
+    );
 
     warningBox.style.display =
       "none";
 
   }
 );
-  
- document.getElementById(
+
+
+document.getElementById(
   "warningOk"
 ).addEventListener(
   "click",
   function() {
 
-    dismissedWarning =
-      lastWarning;
+    clearTimeout(
+      warningTimer
+    );
 
     warningBox.style.display =
       "none";
 
   }
 );
-
   
 
 /* =========================================================
@@ -2504,9 +2514,11 @@ function timeToMinutes(
 
 }
 
+
 /* =========================================================
    TIME GAP
    ========================================================= */
+
 
 function validateTimeGap(
   target,
@@ -2527,7 +2539,6 @@ function validateTimeGap(
 
 
   /*
-     TIME IN:
      E  → C
      X  → V
      AI → AG
@@ -2549,23 +2560,22 @@ function validateTimeGap(
 
 
   /*
-     Ambil TIME OUT asli:
+     Ambil TIME OUT dari:
 
-     E  → C
-     X  → V
+     E → C
+     X → V
      AI → AG
+
+     BUKAN System Time Out D/W/AH.
   */
 
   const timeOut =
-    String(
-      checklist.timeOut ||
-      ""
-    ).trim();
+    checklist.timeOut;
 
 
   /*
      Kalau Time Out belum ada,
-     tidak perlu cek gap.
+     langsung boleh lanjut.
   */
 
   if (
@@ -2598,71 +2608,20 @@ function validateTimeGap(
 
 
   /*
-     AMBIL WAKTU SEKARANG
-     DARI ASIA/COLOMBO
+     Waktu sekarang
   */
 
-  const colomboParts =
-    new Intl.DateTimeFormat(
-      "en-GB",
-      {
-        timeZone:
-          "Asia/Colombo",
-
-        hour:
-          "2-digit",
-
-        minute:
-          "2-digit",
-
-        hour12:
-          false
-      }
-    ).formatToParts(
-      new Date()
-    );
-
-
-  const hourPart =
-    colomboParts.find(
-      function(p) {
-        return p.type === "hour";
-      }
-    );
-
-
-  const minutePart =
-    colomboParts.find(
-      function(p) {
-        return p.type === "minute";
-      }
-    );
-
-
-  const colomboHour =
-    Number(
-      hourPart
-        ? hourPart.value
-        : 0
-    );
-
-
-  const colomboMinute =
-    Number(
-      minutePart
-        ? minutePart.value
-        : 0
-    );
+  const now =
+    new Date();
 
 
   const nowMinutes =
-    colomboHour * 60 +
-    colomboMinute;
+    now.getHours() * 60 +
+    now.getMinutes();
 
 
   /*
-     HITUNG SELISIH
-
+     Hitung selisih.
      Mendukung lewat tengah malam.
   */
 
@@ -2682,11 +2641,8 @@ function validateTimeGap(
 
 
   /*
-     WAJIB LEBIH DARI 1 MENIT
-
-     0 menit  → WARNING
-     1 menit  → WARNING
-     2 menit+ → BOLEH
+     SELISIH 1 MENIT ATAU KURANG
+     → TIDAK BOLEH SCAN
   */
 
   if (
@@ -2706,12 +2662,17 @@ function validateTimeGap(
   }
 
 
+  /*
+     Lebih dari 1 menit
+     → BOLEH SCAN
+  */
+
   return {
     ok: true
   };
 
 }
-
+  
 
 /* =========================================================
    VALIDATE BEFORE CAMERA
@@ -2722,16 +2683,13 @@ function validateBeforeCamera(
   checklist
 ) {
 
-  if (!target) {
+if (!target) {
 
     return {
-
-      ok: false,
-
+      ok:false,
       message:
         "TARGET NOT READY\n\n" +
         "Please select a valid scan target."
-
     };
 
   }
@@ -2744,44 +2702,10 @@ function validateBeforeCamera(
 
 
   /*
-     =====================================================
-     E → TIME IN
-     EMPLOYEE A HARUS SUDAH ADA
-     REMARK G WAJIB
-     =====================================================
+     E → REMARK G WAJIB
   */
 
-  if (
-    column === 5
-  ) {
-
-    const employeeNo =
-      checklist
-        ? String(
-            checklist.employeeNo ||
-            ""
-          ).trim()
-        : "";
-
-
-    if (
-      !employeeNo ||
-      employeeNo ===
-        "NOT YET"
-    ) {
-
-      return {
-
-        ok: false,
-
-        message:
-          "TIME IN NOT ALLOWED\n\n" +
-          "Please scan Employee No in column A first."
-
-      };
-
-    }
-
+  if (column === 5) {
 
     const remark =
       checklist
@@ -2794,13 +2718,12 @@ function validateBeforeCamera(
 
     if (
       !remark ||
-      remark ===
-        "NOT YET"
+      remark === "NOT YET"
     ) {
 
       return {
 
-        ok: false,
+        ok:false,
 
         message:
           "REMARK REQUIRED\n\n" +
@@ -2814,86 +2737,10 @@ function validateBeforeCamera(
 
 
   /*
-     =====================================================
-     X → TIME IN
-     EMPLOYEE T HARUS SUDAH ADA
-     TIDAK ADA REMARK
-     =====================================================
+     AI → REMARK AK WAJIB
   */
 
-  if (
-    column === 24
-  ) {
-
-    const employeeNo =
-      checklist
-        ? String(
-            checklist.employeeNo ||
-            ""
-          ).trim()
-        : "";
-
-
-    if (
-      !employeeNo ||
-      employeeNo ===
-        "NOT YET"
-    ) {
-
-      return {
-
-        ok: false,
-
-        message:
-          "TIME IN NOT ALLOWED\n\n" +
-          "Please scan Employee No in column T first."
-
-      };
-
-    }
-
-  }
-
-
-  /*
-     =====================================================
-     AI → TIME IN
-     EMPLOYEE AE HARUS SUDAH ADA
-     REMARK AK WAJIB
-     =====================================================
-  */
-
-  if (
-    column === 35
-  ) {
-
-    const employeeNo =
-      checklist
-        ? String(
-            checklist.employeeNo ||
-            ""
-          ).trim()
-        : "";
-
-
-    if (
-      !employeeNo ||
-      employeeNo ===
-        "NOT YET"
-    ) {
-
-      return {
-
-        ok: false,
-
-        message:
-          "TIME IN NOT ALLOWED\n\n" +
-          "Please scan Employee No in column AE first."
-
-      };
-
-    }
-
+  if (column === 35) {
 
     const remark =
       checklist
@@ -2906,13 +2753,12 @@ function validateBeforeCamera(
 
     if (
       !remark ||
-      remark ===
-        "NOT YET"
+      remark === "NOT YET"
     ) {
 
       return {
 
-        ok: false,
+        ok:false,
 
         message:
           "REMARK REQUIRED\n\n" +
@@ -2926,9 +2772,7 @@ function validateBeforeCamera(
 
 
   /*
-     =====================================================
      TIME GAP
-     =====================================================
   */
 
   const gap =
@@ -2938,13 +2782,11 @@ function validateBeforeCamera(
     );
 
 
-  if (
-    !gap.ok
-  ) {
+  if (!gap.ok) {
 
     return {
 
-      ok: false,
+      ok:false,
 
       message:
         gap.message
@@ -2955,14 +2797,10 @@ function validateBeforeCamera(
 
 
   return {
-    ok: true
+    ok:true
   };
 
 }
-
-
-
-  
 
   
   
@@ -2985,17 +2823,17 @@ async function checkTarget() {
      SAAT CAMERA SEDANG SCAN
   */
 
-  
-if (
-  targetChecking ||
-  !databaseLoaded ||
-  scanning ||
-  scanProcessing
-) {
+  if (
+    targetChecking ||
+    !databaseLoaded ||
+    scanning ||
+    scanProcessing
+  ) {
 
-  return;
+    return;
 
-}
+  }
+
 
   targetChecking =
     true;
@@ -3072,23 +2910,20 @@ if (
   data.warning
 ) {
 
+  if (
+    data.warning !==
+    lastWarning
+  ) {
 
-if (
-  data.warning &&
-  data.warning !==
-    dismissedWarning
-) {
+    lastWarning =
+      data.warning;
 
-  lastWarning =
-    data.warning;
+    showWarning(
+      data.warning
+    );
 
-  showWarning(
-    data.warning
-  );
+  }
 
-}
-
-  
   setStatus(
     "ACTION REQUIRED"
   );
@@ -3149,48 +2984,6 @@ if (
       column;
 
 
-
-if (
-  newKey ===
-  completedTargetKey
-) {
-
-  cameraHold =
-    true;
-
-  stopCamera();
-
-  targetInfo.innerText =
-    "WAITING FOR TARGET";
-
-  return;
-
-}
-    
-    
-
-if (
-  currentTarget &&
-  (
-    currentTarget.sheet +
-    "|" +
-    currentTarget.row +
-    "|" +
-    currentTarget.column
-  ) !==
-  newKey
-) {
-
-  dismissedWarning =
-    "";
-
-  completedTargetKey =
-    "";
-
-}
-    
-
-
      oldKey =
       currentTarget
 
@@ -3219,78 +3012,35 @@ if (
           data.checklist
         );
 
+      if (!sameValidation.ok) {
+        showWarning(
+          sameValidation.message
+        );
 
-if (!sameValidation.ok) {
+        setStatus(
+          "ACTION REQUIRED"
+        );
 
-  lastWarning =
-    sameValidation.message;
+        stopCamera();
+      }
 
-  if (
-    sameValidation.message !==
-    dismissedWarning
-  ) {
-
-    showWarning(
-      sameValidation.message
-    );
-
-  }
-
-  setStatus(
-    "ACTION REQUIRED"
-  );
-
-  stopCamera();
-}
-
-      
       return;
 
     }
 
 
+    /*
+       TARGET BARU
+    */
 
-/*
-   TARGET BARU
-*/
+    if (
+      scanning
+    ) {
 
-if (
-  newKey !==
-  completedTargetKey
-) {
+      stopCamera();
 
-  cameraHold =
-    false;
+    }
 
-}
-
-
-/*
-   Kalau masih HOLD,
-   camera jangan hidup.
-*/
-
-if (
-  cameraHold
-) {
-
-  stopCamera();
-
-  return;
-
-}
-
-
-    
-
-if (
-  scanning
-) {
-  stopCamera();
-}
-
-
-    
 
     scanLocked =
       false;
@@ -3354,37 +3104,27 @@ if (
       );
 
 
-if (
-  !validation.ok
-) {
+    if (
+      !validation.ok
+    ) {
 
-  lastWarning =
-    validation.message;
-
-  if (
-    validation.message !==
-    dismissedWarning
-  ) {
-
-    showWarning(
-      validation.message
-    );
-
-  }
-
-  setStatus(
-    "ACTION REQUIRED"
-  );
-
-  stopCamera();
-
-  return;
-
-}
+      showWarning(
+        validation.message
+      );
 
 
+      setStatus(
+        "ACTION REQUIRED"
+      );
 
-    
+
+      stopCamera();
+
+
+      return;
+
+    }
+
 
     /*
        CAMERA ON
@@ -3440,25 +3180,15 @@ function startTargetMonitor() {
    START CAMERA
    ========================================================= */
 
+
 async function startCamera() {
 
-  /*
-     CAMERA TIDAK BOLEH HIDUP
-     KALAU MASIH HOLD
-  */
-
-  if (
-    scanning ||
-    cameraHold
-  ) {
-
+  if (scanning) {
     return;
-
   }
 
-
   /*
-     FACE SYSTEM HARUS READY
+     FACE SYSTEM MUST BE READY
   */
 
   if (
@@ -3472,250 +3202,97 @@ async function startCamera() {
     );
 
     return;
-
   }
-
-
-  /*
-     BUAT TOKEN REQUEST
-
-     Kalau stopCamera() dipanggil
-     ketika getUserMedia() masih menunggu,
-     request lama otomatis dianggap batal.
-  */
-
-  const requestToken =
-    ++cameraRequestToken;
-
 
   try {
 
-    let stream =
-      cameraStream;
-
-
     /*
-       REQUEST CAMERA
+       REQUEST CAMERA ONLY ONCE
+
+       After permission is granted,
+       the same camera stream will be reused.
     */
 
-    if (!stream) {
-
-      stream =
-        await navigator
-          .mediaDevices
-          .getUserMedia({
-
-            video: {
-
-              width: {
-                ideal:
-                  CAMERA_WIDTH
-              },
-
-              height: {
-                ideal:
-                  CAMERA_HEIGHT
-              },
-
-              facingMode:
-                "user"
-
-            },
-
-            audio:
-              false
-
-          });
-
-
-      /*
-         CEK ULANG SETELAH
-         getUserMedia() SELESAI
-
-         Kalau selama menunggu:
-         - stopCamera dipanggil
-         - cameraHold aktif
-         - target sudah hilang
-
-         maka stream langsung dimatikan.
-      */
-
-      if (
-        requestToken !==
-          cameraRequestToken ||
-        cameraHold ||
-        !currentTarget
-      ) {
-
-        stream
-          .getTracks()
-          .forEach(
-            function(track) {
-
-              track.stop();
-
-            }
-          );
-
-        return;
-
-      }
-
+    if (!cameraStream) {
 
       cameraStream =
-        stream;
+        await navigator.mediaDevices.getUserMedia({
+
+          video: {
+
+            width: {
+              ideal: CAMERA_WIDTH
+            },
+
+            height: {
+              ideal: CAMERA_HEIGHT
+            },
+
+            facingMode: "user"
+
+          },
+
+          audio: false
+
+        });
 
     }
 
-
     /*
-       REQUEST LAMA TIDAK BOLEH
-       MENERUSKAN CAMERA
-    */
-
-    if (
-      requestToken !==
-        cameraRequestToken ||
-      cameraHold ||
-      !currentTarget
-    ) {
-
-      if (
-        stream &&
-        !cameraStream
-      ) {
-
-        stream
-          .getTracks()
-          .forEach(
-            function(track) {
-
-              track.stop();
-
-            }
-          );
-
-      }
-
-      return;
-
-    }
-
-
-    /*
-       ENABLE VIDEO TRACK
+       Re-enable existing camera track.
     */
 
     cameraStream
       .getVideoTracks()
-      .forEach(
-        function(track) {
+      .forEach(function(track) {
 
-          track.enabled =
-            true;
+        track.enabled = true;
 
-        }
-      );
-
-
-    /*
-       PASANG STREAM KE VIDEO
-    */
+      });
 
     video.srcObject =
       cameraStream;
 
-
     await video.play();
-
-
-    /*
-       CEK LAGI SETELAH video.play()
-
-       Ini juga penting untuk mencegah
-       camera hidup setelah target sudah selesai.
-    */
-
-    if (
-      requestToken !==
-        cameraRequestToken ||
-      cameraHold ||
-      !currentTarget
-    ) {
-
-      stopCamera();
-
-      return;
-
-    }
-
 
     cameraBox.classList.add(
       "active"
     );
 
-
     scanning =
       true;
-
 
     scanLocked =
       false;
 
-
     stableCount =
       0;
 
-
     lastEmployee =
       "";
-
 
     setStatus(
       "CAMERA READY"
     );
 
-
     resultBox.innerText =
       "LOOK AT THE CAMERA";
 
-
     startScanLoop();
 
-
-  } catch (
-    error
-  ) {
-
-    /*
-       Kalau request sudah dibatalkan,
-       jangan tampilkan CAMERA ERROR.
-    */
-
-    if (
-      requestToken !==
-      cameraRequestToken
-    ) {
-
-      return;
-
-    }
-
+  } catch (error) {
 
     console.error(
       "CAMERA ERROR:",
       error
     );
 
-
     scanning =
       false;
-
 
     setStatus(
       "CAMERA ERROR"
     );
-
 
     resultBox.innerText =
       "PLEASE ALLOW CAMERA ACCESS";
@@ -3724,15 +3301,6 @@ async function startCamera() {
 
 }
 
-
-
-
-
-
-
-
-
-  
   
 
 /* =========================================================
@@ -3772,18 +3340,6 @@ function startScanLoop() {
 
 function stopCamera() {
 
-  /*
-     BATALKAN SEMUA REQUEST CAMERA
-     YANG MASIH BERJALAN
-  */
-
-  cameraRequestToken++;
-
-
-  /*
-     STOP SCANNING
-  */
-
   scanning =
     false;
 
@@ -3800,10 +3356,6 @@ function stopCamera() {
     "";
 
 
-  /*
-     STOP SCAN TIMER
-  */
-
   if (
     scanTimer
   ) {
@@ -3812,15 +3364,12 @@ function stopCamera() {
       scanTimer
     );
 
+
     scanTimer =
       null;
 
   }
 
-
-  /*
-     MATIKAN SEMUA TRACK CAMERA
-  */
 
   if (
     cameraStream
@@ -3843,24 +3392,15 @@ function stopCamera() {
   }
 
 
-  /*
-     LEPAS STREAM DARI VIDEO
-  */
-
   video.srcObject =
     null;
 
-
-  /*
-     HILANGKAN CAMERA BOX
-  */
 
   cameraBox.classList.remove(
     "active"
   );
 
 }
-  
 
 
 /* =========================================================
@@ -4369,86 +3909,84 @@ async function scanFace() {
 
     }
 
-/*
-   =====================================================
-   SUCCESS
-   =====================================================
-*/
 
-setStatus(
-  "SCAN SUCCESS"
-);
+    /*
+       SUCCESS
+    */
 
+    setStatus(
+      "SCAN SUCCESS"
+    );
 
-resultBox.innerText =
-  "SUCCESS\n" +
-  employeeId +
-  " " +
-  employeeName;
-
-
-/*
-   SIMPAN TARGET YANG BARU SELESAI
-   SEBELUM currentTarget DIHAPUS
-*/
-
-completedTargetKey =
-  currentTarget
-    ? (
-        currentTarget.sheet +
-        "|" +
-        currentTarget.row +
-        "|" +
-        currentTarget.column
-      )
-    : "";
-
-
-/*
-   CAMERA LANGSUNG OFF
-*/
-
-stopCamera();
-
-
-/*
-   HOLD
-
-   Scanner TIDAK BOLEH membuka camera
-   lagi untuk target yang sama.
-*/
-
-cameraHold =
-  true;
-
-
-/*
-   TARGET SELESAI
-*/
-
-currentTarget =
-  null;
-
-
-targetInfo.innerText =
-  "WAITING FOR TARGET";
-
-
-/*
-   BERSIHKAN SUCCESS
-   SETELAH 1.8 DETIK
-*/
-
-setTimeout(
-  function() {
 
     resultBox.innerText =
+      "SUCCESS\n" +
+      employeeId +
+      " " +
+      employeeName;
+
+
+    /*
+       CAMERA OFF OTOMATIS
+    */
+
+    stopCamera();
+
+
+    /*
+       TARGET LAMA SELESAI
+    */
+
+    currentTarget =
+      null;
+
+
+    targetInfo.innerText =
+      "WAITING FOR TARGET";
+
+
+    /*
+       Bersihkan tulisan SUCCESS
+       setelah 1.8 detik.
+    */
+
+    setTimeout(
+      function() {
+
+        resultBox.innerText =
+          "";
+
+      },
+      1800
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "SCAN ERROR:",
+      error
+    );
+
+
+    stableCount =
+      0;
+
+
+    lastEmployee =
       "";
 
-  },
-  1800
-);
-    
+
+    resultBox.innerText =
+      "SCAN ERROR";
+
+  } finally {
+
+    scanProcessing = false;
+
+  }
+
+}
 
 
 /* =========================================================
