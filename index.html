@@ -2967,14 +2967,18 @@ if (
       "|" +
       column;
 
-    if (
+
+if (
   newKey ===
   completedTargetKey
 ) {
 
+  stopCamera();
+
   return;
 
 }
+    
 
 if (
   currentTarget &&
@@ -3131,27 +3135,37 @@ if (!sameValidation.ok) {
       );
 
 
-    if (
-      !validation.ok
-    ) {
+if (
+  !validation.ok
+) {
 
-      showWarning(
-        validation.message
-      );
+  lastWarning =
+    validation.message;
+
+  if (
+    validation.message !==
+    dismissedWarning
+  ) {
+
+    showWarning(
+      validation.message
+    );
+
+  }
+
+  setStatus(
+    "ACTION REQUIRED"
+  );
+
+  stopCamera();
+
+  return;
+
+}
 
 
-      setStatus(
-        "ACTION REQUIRED"
-      );
 
-
-      stopCamera();
-
-
-      return;
-
-    }
-
+    
 
     /*
        CAMERA ON
