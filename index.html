@@ -2682,7 +2682,7 @@ function validateBeforeCamera(
   checklist
 ) {
 
-  if (!target) {
+  i {
 
     return {
       ok:false,
@@ -2802,113 +2802,13 @@ function validateBeforeCamera(
 }
 
   
-
-  if (!target) {
-
-    return {
-
-      ok: false,
-
-      message:
-        "TARGET NOT READY"
-
-    };
-
-  }
+  
 
 
-  const column =
-    Number(
-      target.column
-    );
 
 
-  /*
-     E → Remark G wajib
-  */
+  
 
-  if (
-    column === 5
-  ) {
-
-    const remark =
-      checklist
-
-        ? String(
-            checklist.remark ||
-            ""
-          ).trim()
-
-        : "";
-
-
-    if (
-      !remark ||
-      remark ===
-        "NOT YET"
-    ) {
-
-      return {
-
-        ok: false,
-
-        message:
-          "REMARK REQUIRED\n\n" +
-          "Please enter Remark in column G before scanning Time In."
-
-      };
-
-    }
-
-  }
-
-
-  /*
-     AI → Remark AK wajib
-  */
-
-  if (
-    column === 35
-  ) {
-
-    const remark =
-      checklist
-
-        ? String(
-            checklist.remark ||
-            ""
-          ).trim()
-
-        : "";
-
-
-    if (
-      !remark ||
-      remark ===
-        "NOT YET"
-    ) {
-
-      return {
-
-        ok: false,
-
-        message:
-          "REMARK REQUIRED\n\n" +
-          "Please enter Remark in column AK before scanning Time In."
-
-      };
-
-    }
-
-  }
-
-
-  return validateTimeGap(
-    target,
-    checklist
-  );
-
-}
 
 
 /* =========================================================
