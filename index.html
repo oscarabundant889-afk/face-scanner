@@ -2483,41 +2483,41 @@ function validateBeforeCamera(
    TARGET CHECK
    ========================================================= */
 
+
+
+/* =========================================================
+   TARGET CHECK - FINAL
+   ========================================================= */
+
 async function checkTarget() {
 
   if (
     targetChecking ||
     !databaseLoaded
   ) {
-
     return;
-
   }
 
-
-  targetChecking =
-    true;
-
+  targetChecking = true;
 
   try {
 
     const data =
       await getCurrentTarget();
 
-
     if (
       !data ||
       !data.ok
     ) {
-
       return;
-
     }
 
 
-    if (
-      data.checklist
-    ) {
+    /* =====================================================
+       UPDATE CHECKLIST
+       ===================================================== */
+
+    if (data.checklist) {
 
       updateChecklist(
         data.checklist
@@ -2526,78 +2526,65 @@ async function checkTarget() {
     }
 
 
-    /*
-       TARGET TIDAK READY
-    */
+    /* =====================================================
+       NO TARGET
+       ===================================================== */
 
-    if (
-      !data.ready
-    ) {
+    if (!data.ready) {
 
-      if (
-        currentTarget
-      ) {
+      if (currentTarget) {
 
         stopCamera();
 
+        currentTarget = null;
 
-        currentTarget =
-          null;
+        scanLocked = false;
 
+        stableCount = 0;
 
-        scanLocked =
-          false;
-
-
-        stableCount =
-          0;
-
-
-        lastEmployee =
-          "";
+        lastEmployee = "";
 
       }
 
+      cameraHold = false;
 
       targetInfo.innerText =
         "WAITING FOR TARGET";
 
-
       return;
 
     }
 
 
+    /* =====================================================
+       CHECK ALLOWED COLUMN
+       ===================================================== */
+
     const column =
-      Number(
-        data.column
-      );
+      Number(data.column);
 
-
-    const allowed =
-      [
-        1,
-        5,
-        13,
-        20,
-        24,
-        31,
-        35
-      ];
-
+    const allowed = [
+      1,   // A
+      5,   // E
+      13,  // M
+      20,  // T
+      24,  // X
+      31,  // AE
+      35   // AI
+    ];
 
     if (
       !data.sheet ||
       !data.row ||
-      !allowed.includes(
-        column
-      )
+      !allowed.includes(column)
     ) {
-
       return;
-
     }
 
+
+    /* =====================================================
+       TARGET KEY
+       ===================================================== */
 
     const newKey =
       data.sheet +
@@ -2609,160 +2596,145 @@ async function checkTarget() {
 
     const oldKey =
       currentTarget
-
         ? currentTarget.sheet +
           "|" +
           currentTarget.row +
           "|" +
           currentTarget.column
-
         : "";
 
 
-    /*
-       TARGET SAMA
-       → jangan restart camera
-    */
+    /* =====================================================
+       TARGET YANG SAMA
+       
+       PENTING:
+       - Jangan membuat warning berulang.
+       - Kalau warning sudah ditutup, jangan tampilkan lagi.
+       - Kalau kondisi sudah benar, CAMERA BOLEH START
+         TANPA REFRESH.
+       ===================================================== */
+
+    if (newKey === oldKey) {
+
+      const validation =
+        validateBeforeCamera(
+          currentTarget,
+          data.checklist
+        );
 
 
-if (
-  newKey ===
-  oldKey
-) {
+      /* ================================================
+         TARGET MASIH SALAH
+         ================================================ */
 
-  const sameValidation =
-    validateBeforeCamera(
-      currentTarget,
-      data.checklist
-    );
+      if (!validation.ok) {
 
-  if (
-    !sameValidation.ok
-  ) {
+        setStatus(
+          "ACTION REQUIRED"
+        );
 
-    setStatus(
-      "ACTION REQUIRED"
-    );
 
-    /*
-       WARNING hanya muncul
-       kalau belum pernah ditutup.
-    */
+        /*
+         * WARNING hanya tampil sekali.
+         *
+         * Kalau warning yang sama sedang tampil,
+         * jangan panggil showWarning lagi.
+         */
 
-    if (
-      sameValidation.message !==
-      dismissedWarning
-    ) {
+        const warningVisible =
+          warningBox.style.display === "block";
 
-      showWarning(
-        sameValidation.message
-      );
+
+        if (
+          validation.message !==
+            dismissedWarning &&
+          (
+            !warningVisible ||
+            lastWarning !==
+              validation.message
+          )
+        ) {
+
+          showWarning(
+            validation.message
+          );
+
+        }
+
+
+        /*
+         * CAMERA HARUS OFF
+         */
+
+        stopCamera();
+
+        return;
+
+      }
+
+
+      /* ================================================
+         TARGET SUDAH BENAR
+         
+         Contoh:
+         G sudah diisi
+         AK sudah diisi
+         atau Time Gap sudah > 1 menit
+         
+         TIDAK PERLU REFRESH.
+         CAMERA LANGSUNG BOLEH HIDUP.
+         ================================================ */
+
+      warningBox.style.display =
+        "none";
+
+      dismissedWarning = "";
+
+      if (
+        !cameraHold &&
+        !scanning &&
+        !scanProcessing
+      ) {
+
+        await startCamera();
+
+      }
+
+      return;
 
     }
 
-    stopCamera();
 
-    return;
-
-  }
-
-  /*
-     Kalau validation sudah OK
-     dan camera belum hidup,
-     jangan restart otomatis
-     kalau sedang HOLD.
-  */
-
-  if (
-    cameraHold
-  ) {
-
-    return;
-
-  }
-
-  return;
-
-}
-
-
-    
-
-    /*
+    /* =====================================================
        TARGET BARU
-    */
+       ===================================================== */
 
-    if (
-      scanning
-    ) {
+    if (scanning) {
 
       stopCamera();
 
     }
 
 
-    scanLocked =
-      false;
+    scanLocked = false;
+
+    stableCount = 0;
+
+    lastEmployee = "";
 
 
-    stableCount =
-      0;
+    /*
+     * Target baru = lepaskan HOLD.
+     */
+
+    cameraHold = false;
+
+    dismissedWarning = "";
 
 
-    lastEmployee =
-      "";
-
-
-
-
-/*
-   TARGET BARU
-*/
-
-if (scanning) {
-
-  stopCamera();
-
-}
-
-
-scanLocked =
-  false;
-
-
-stableCount =
-  0;
-
-
-lastEmployee =
-  "";
-
-
-/*
-   TARGET BARU
-
-   Hanya target yang benar-benar
-   berbeda dari target sebelumnya
-   yang boleh membuka kamera.
-*/
-
-cameraHold =
-  false;
-
-dismissedWarning =
-  "";
-
-
-
-
-
-
-
-
-
-
-    
-
+    /* =====================================================
+       SET CURRENT TARGET
+       ===================================================== */
 
     currentTarget = {
 
@@ -2770,9 +2742,7 @@ dismissedWarning =
         data.sheet,
 
       row:
-        Number(
-          data.row
-        ),
+        Number(data.row),
 
       column:
         column
@@ -2784,18 +2754,13 @@ dismissedWarning =
       "TARGET: " +
       data.sheet +
       "!" +
-      columnToLetter(
-        column
-      ) +
+      columnToLetter(column) +
       data.row;
 
 
-    resultBox.innerText =
-      "";
+    resultBox.innerText = "";
 
-
-    distanceBox.innerText =
-      "";
+    distanceBox.innerText = "";
 
 
     updateChecklist(
@@ -2803,9 +2768,9 @@ dismissedWarning =
     );
 
 
-    /*
-       VALIDASI
-    */
+    /* =====================================================
+       VALIDATE TARGET BARU
+       ===================================================== */
 
     const validation =
       validateBeforeCamera(
@@ -2814,33 +2779,43 @@ dismissedWarning =
       );
 
 
-    if (
-      !validation.ok
-    ) {
+    /* =====================================================
+       TARGET BARU TIDAK VALID
+       ===================================================== */
 
-      showWarning(
-        validation.message
-      );
-
+    if (!validation.ok) {
 
       setStatus(
         "ACTION REQUIRED"
       );
 
 
-      stopCamera();
+      /*
+       * Warning hanya satu kali.
+       */
 
+      showWarning(
+        validation.message
+      );
+
+
+      /*
+       * Camera jangan hidup.
+       */
+
+      stopCamera();
 
       return;
 
     }
 
 
-    /*
-       CAMERA ON
-    */
+    /* =====================================================
+       TARGET BARU VALID
+       ===================================================== */
 
     await startCamera();
+
 
   } catch (error) {
 
@@ -2851,13 +2826,15 @@ dismissedWarning =
 
   } finally {
 
-    targetChecking =
-      false;
+    targetChecking = false;
 
   }
 
 }
 
+
+
+  
 
 /* =========================================================
    TARGET MONITOR
