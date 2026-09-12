@@ -200,25 +200,81 @@ h1{
 
 
 /*
-   WARNING GLOW
+   WARNING CONTENT
 */
 
 #warning::before{
+  display:none;
+}
 
-  content:"⚠";
-
-  display:block;
-
+#warningIcon{
   font-size:48px;
-
   margin-bottom:12px;
-
   filter:
     drop-shadow(
       0 5px 10px
       rgba(255,180,0,.4)
     );
+}
 
+#warningTitle{
+  font-size:22px;
+  font-weight:bold;
+  margin-bottom:18px;
+}
+
+#warningMessage{
+  font-size:17px;
+  line-height:1.5;
+  white-space:pre-line;
+  margin-bottom:24px;
+}
+
+#warningClose{
+  position:absolute;
+  top:10px;
+  right:12px;
+
+  width:38px;
+  height:38px;
+
+  border:none;
+  border-radius:50%;
+
+  background:#333;
+  color:#fff;
+
+  font-size:22px;
+  font-weight:bold;
+
+  cursor:pointer;
+}
+
+#warningClose:hover{
+  background:#555;
+}
+
+#warningOk{
+  min-width:110px;
+  padding:11px 25px;
+
+  border:none;
+  border-radius:10px;
+
+  background:#fff;
+  color:#111;
+
+  font-size:16px;
+  font-weight:bold;
+
+  cursor:pointer;
+
+  box-shadow:
+    0 5px 15px rgba(0,0,0,.4);
+}
+
+#warningOk:hover{
+  transform:scale(1.05);
 }
 
 
@@ -317,7 +373,22 @@ h1{
 
 <div id="result"></div>
 
-<div id="warning"></div>
+<div id="warning">
+  <button id="warningClose" type="button">✕</button>
+
+  <div id="warningIcon">⚠</div>
+
+  <div id="warningTitle">
+    WARNING
+  </div>
+
+  <div id="warningMessage">
+  </div>
+
+  <button id="warningOk" type="button">
+    OK
+  </button>
+</div>
 
 <div id="distance"></div>
 
@@ -658,6 +729,7 @@ function setStatus(
    WARNING
    ========================================================= */
 
+
 function showWarning(
   text
 ) {
@@ -667,33 +739,100 @@ function showWarning(
   );
 
 
-  warningBox.innerText =
-    text || "";
+  if (!text) {
 
+    warningBox.style.display =
+      "none";
 
-  warningBox.style.display =
-    text
-      ? "block"
-      : "none";
-
-
-  if (text) {
-
-    warningTimer =
-      setTimeout(
-        function() {
-
-          warningBox.style.display =
-            "none";
-
-        },
-        WARNING_TIME
-      );
+    return;
 
   }
 
+
+  const parts =
+    String(text).split(
+      "\n\n"
+    );
+
+
+  const title =
+    parts[0] ||
+    "WARNING";
+
+
+  const message =
+    parts
+      .slice(1)
+      .join("\n\n") ||
+    "";
+
+
+  document.getElementById(
+    "warningTitle"
+  ).innerText =
+    title;
+
+
+  document.getElementById(
+    "warningMessage"
+  ).innerText =
+    message;
+
+
+  warningBox.style.display =
+    "block";
+
+
+  /*
+     AUTO CLOSE 3 DETIK
+  */
+
+  warningTimer =
+    setTimeout(
+      function() {
+
+        warningBox.style.display =
+          "none";
+
+      },
+      WARNING_TIME
+    );
+
 }
 
+  document.getElementById(
+  "warningClose"
+).addEventListener(
+  "click",
+  function() {
+
+    clearTimeout(
+      warningTimer
+    );
+
+    warningBox.style.display =
+      "none";
+
+  }
+);
+
+
+document.getElementById(
+  "warningOk"
+).addEventListener(
+  "click",
+  function() {
+
+    clearTimeout(
+      warningTimer
+    );
+
+    warningBox.style.display =
+      "none";
+
+  }
+);
+  
 
 /* =========================================================
    CHECKLIST
