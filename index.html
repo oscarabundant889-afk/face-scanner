@@ -2497,6 +2497,127 @@ function validateBeforeCamera(
   if (!target) {
 
     return {
+      ok:false,
+      message:
+        "TARGET NOT READY\n\n" +
+        "Please select a valid scan target."
+    };
+
+  }
+
+
+  const column =
+    Number(
+      target.column
+    );
+
+
+  /*
+     E → REMARK G WAJIB
+  */
+
+  if (column === 5) {
+
+    const remark =
+      checklist
+        ? String(
+            checklist.remark ||
+            ""
+          ).trim()
+        : "";
+
+
+    if (
+      !remark ||
+      remark === "NOT YET"
+    ) {
+
+      return {
+
+        ok:false,
+
+        message:
+          "REMARK REQUIRED\n\n" +
+          "Please enter Remark in column G before scanning Time In."
+
+      };
+
+    }
+
+  }
+
+
+  /*
+     AI → REMARK AK WAJIB
+  */
+
+  if (column === 35) {
+
+    const remark =
+      checklist
+        ? String(
+            checklist.remark ||
+            ""
+          ).trim()
+        : "";
+
+
+    if (
+      !remark ||
+      remark === "NOT YET"
+    ) {
+
+      return {
+
+        ok:false,
+
+        message:
+          "REMARK REQUIRED\n\n" +
+          "Please enter Remark in column AK before scanning Time In."
+
+      };
+
+    }
+
+  }
+
+
+  /*
+     TIME GAP
+  */
+
+  const gap =
+    validateTimeGap(
+      target,
+      checklist
+    );
+
+
+  if (!gap.ok) {
+
+    return {
+
+      ok:false,
+
+      message:
+        gap.message
+
+    };
+
+  }
+
+
+  return {
+    ok:true
+  };
+
+}
+
+  
+
+  if (!target) {
+
+    return {
 
       ok: false,
 
