@@ -2645,115 +2645,103 @@ function startTargetMonitor() {
    START CAMERA
    ========================================================= */
 
+
 async function startCamera() {
 
-  if (
-    scanning
-  ) {
-
+  if (scanning) {
     return;
-
   }
 
-
   /*
-     Face system wajib READY.
+     FACE SYSTEM MUST BE READY
   */
 
   if (
-
     !modelsLoaded ||
     !databaseLoaded ||
     !faceMatcher
-
   ) {
 
     showWarning(
       "FACE SYSTEM NOT READY"
     );
 
-
     return;
-
   }
-
 
   try {
 
     /*
-       Buka camera
+       REQUEST CAMERA ONLY ONCE
+
+       After permission is granted,
+       the same camera stream will be reused.
     */
 
-    if (
-      !cameraStream
-    ) {
+    if (!cameraStream) {
 
       cameraStream =
-        await navigator
-          .mediaDevices
-          .getUserMedia({
+        await navigator.mediaDevices.getUserMedia({
 
-            video: {
+          video: {
 
-              width: {
-                ideal:
-                  CAMERA_WIDTH
-              },
-
-              height: {
-                ideal:
-                  CAMERA_HEIGHT
-              },
-
-              facingMode:
-                "user"
-
+            width: {
+              ideal: CAMERA_WIDTH
             },
 
-            audio:
-              false
+            height: {
+              ideal: CAMERA_HEIGHT
+            },
 
-          });
+            facingMode: "user"
+
+          },
+
+          audio: false
+
+        });
 
     }
 
+    /*
+       Re-enable existing camera track.
+    */
+
+    cameraStream
+      .getVideoTracks()
+      .forEach(function(track) {
+
+        track.enabled = true;
+
+      });
 
     video.srcObject =
       cameraStream;
 
-
     await video.play();
-
 
     cameraBox.classList.add(
       "active"
     );
 
-
     scanning =
       true;
-
 
     scanLocked =
       false;
 
-
     stableCount =
       0;
 
-
     lastEmployee =
       "";
-
 
     setStatus(
       "CAMERA READY"
     );
 
-
     resultBox.innerText =
       "LOOK AT THE CAMERA";
-
 
     startScanLoop();
 
@@ -2764,15 +2752,12 @@ async function startCamera() {
       error
     );
 
-
     scanning =
       false;
-
 
     setStatus(
       "CAMERA ERROR"
     );
-
 
     resultBox.innerText =
       "PLEASE ALLOW CAMERA ACCESS";
@@ -2781,6 +2766,7 @@ async function startCamera() {
 
 }
 
+  
 
 /* =========================================================
    SCAN LOOP
