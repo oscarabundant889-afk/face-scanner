@@ -904,26 +904,33 @@ function apiRequest(
 
             cleanup();
 
-            if (
-              retryable &&
-              attempt < maxAttempts
-            ) {
 
-              setStatus(
-                "RECONNECTING FACE API " +
-                attempt +
-                "/" +
-                maxAttempts
-              );
+if (
+  retryable &&
+  attempt < maxAttempts
+) {
 
-              setTimeout(
-                runAttempt,
-                1200
-              );
+  // TARGET sudah pernah terbaca.
+  // Jangan tampilkan RECONNECTING ke user.
+  if (action !== "target") {
+    setStatus(
+      "RECONNECTING FACE API " +
+      attempt +
+      "/" +
+      maxAttempts
+    );
+  }
 
-              return;
-            }
+  setTimeout(
+    runAttempt,
+    1200
+  );
 
+  return;
+}
+
+
+            
             reject(
               new Error(
                 "API CONNECTION ERROR: " +
