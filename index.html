@@ -529,6 +529,9 @@ let faceMatcher =
 let cameraStream =
   null;
 
+let cameraRequestId = 0;
+  
+
   let cameraRequestToken = 0;
 
 let cameraHold = false;
@@ -2887,130 +2890,63 @@ function startTargetMonitor() {
    START CAMERA - FINAL
    ========================================================= */
 
+
 async function startCamera() {
 
-  /*
-     CAMERA HOLD
-     Setelah SUCCESS atau STOP,
-     camera tidak boleh hidup sendiri.
-  */
-
-  if (
-    cameraHold
-  ) {
-
+  if (cameraHold) {
     return;
-
   }
 
-  if (
-    scanning
-  ) {
-
+  if (scanning) {
     return;
-
   }
 
-  if (
-    !modelsLoaded ||
-    !databaseLoaded ||
-    !faceMatcher
-  ) {
-
-    showWarning(
-      "FACE SYSTEM NOT READY"
-    );
-
-    return;
-
-  }
-
-  /*
-     Buat token baru.
-  */
-
-  const requestToken =
-    ++cameraRequestToken;
+  const requestId =
+    ++cameraRequestId;
 
   try {
 
-    const newStream =
-      await navigator
-        .mediaDevices
-        .getUserMedia({
-
-          video: {
-
-            width: {
-              ideal:
-                CAMERA_WIDTH
-            },
-
-            height: {
-              ideal:
-                CAMERA_HEIGHT
-            },
-
-            facingMode:
-              "user"
-
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: {
+            ideal: CAMERA_WIDTH
           },
+          height: {
+            ideal: CAMERA_HEIGHT
+          },
+          facingMode: "user"
+        },
+        audio: false
+      });
 
-          audio:
-            false
+    /*
+     * Kalau request camera ini sudah dibatalkan
+     * sebelum getUserMedia selesai,
+     * langsung matikan stream yang baru didapat.
+     */
+    if (
+      requestId !== cameraRequestId ||
+      cameraHold
+    ) {
 
+      stream
+        .getTracks()
+        .forEach(function(track) {
+          track.stop();
         });
 
-    /*
-       Kalau selama menunggu
-       kamera sudah di-stop,
-       STREAM BARU LANGSUNG DIMATIKAN.
-    */
-
-    if (
-      requestToken !==
-        cameraRequestToken ||
-      cameraHold ||
-      !currentTarget
-    ) {
-
-      newStream
-        .getTracks()
-        .forEach(
-          function(track) {
-            track.stop();
-          }
-        );
-
       return;
-
-    }
-
-    /*
-       Matikan stream lama
-       jika masih ada.
-    */
-
-    if (
-      cameraStream
-    ) {
-
-      cameraStream
-        .getTracks()
-        .forEach(
-          function(track) {
-            track.stop();
-          }
-        );
-
     }
 
     cameraStream =
-      newStream;
+      stream;
 
-    /*
-       Pasang stream.
-    */
+    cameraStream
+      .getVideoTracks()
+      .forEach(function(track) {
+        track.enabled = true;
+      });
 
     video.srcObject =
       cameraStream;
@@ -3018,56 +2954,44 @@ async function startCamera() {
     await video.play();
 
     /*
-       CEK SEKALI LAGI
-    */
-
+     * Cek sekali lagi setelah video play.
+     */
     if (
-      requestToken !==
-        cameraRequestToken ||
-      cameraHold ||
-      !currentTarget
+      requestId !== cameraRequestId ||
+      cameraHold
     ) {
 
       stopCamera();
 
       return;
-
     }
 
     cameraBox.classList.add(
       "active"
     );
 
-    scanning =
-      true;
+    scanning = true;
 
-    scanLocked =
-      false;
-
-    stableCount =
-      0;
-
-    lastEmployee =
-      "";
+    stableCount = 0;
+    lastEmployee = "";
+    scanLocked = false;
 
     setStatus(
-      "CAMERA READY"
+      "READY TO SCAN"
     );
-
-    resultBox.innerText =
-      "LOOK AT THE CAMERA";
 
     startScanLoop();
 
   } catch (error) {
 
+    /*
+     * Kalau request sudah dibatalkan,
+     * jangan tampilkan error.
+     */
     if (
-      requestToken !==
-      cameraRequestToken
+      requestId !== cameraRequestId
     ) {
-
       return;
-
     }
 
     console.error(
@@ -3075,16 +2999,11 @@ async function startCamera() {
       error
     );
 
-    scanning =
-      false;
+    scanning = false;
 
-    cameraStream =
-      null;
+    cameraStream = null;
 
-    video.pause();
-
-    video.srcObject =
-      null;
+    video.srcObject = null;
 
     cameraBox.classList.remove(
       "active"
@@ -3095,12 +3014,22 @@ async function startCamera() {
     );
 
     resultBox.innerText =
-      "PLEASE ALLOW CAMERA ACCESS";
-
+      "CAMERA ERROR\n" +
+      (
+        error &&
+        error.message
+          ? error.message
+          : "Unable to access camera."
+      );
   }
-
 }
 
+
+
+
+
+
+  
 
   
 
@@ -3141,89 +3070,63 @@ function startScanLoop() {
    STOP CAMERA - FINAL
    ========================================================= */
 
-
-
 function stopCamera() {
 
   /*
-     BATALKAN semua request
-     kamera yang sedang menunggu.
-  */
+   * Batalkan semua request camera
+   * yang masih berjalan.
+   */
+  cameraRequestId++;
 
-  cameraRequestToken++;
+  scanning = false;
 
-  scanning =
-    false;
+  scanLocked = false;
 
-  scanLocked =
-    false;
+  stableCount = 0;
 
-  stableCount =
-    0;
+  lastEmployee = "";
 
-  lastEmployee =
-    "";
-
-  /*
-     STOP SCAN LOOP
-  */
-
-  if (
-    scanTimer
-  ) {
+  if (scanTimer) {
 
     clearInterval(
       scanTimer
     );
 
-    scanTimer =
-      null;
-
+    scanTimer = null;
   }
 
-  /*
-     MATIKAN CAMERA STREAM
-  */
-
-  if (
-    cameraStream
-  ) {
+  if (cameraStream) {
 
     cameraStream
       .getTracks()
-      .forEach(
-        function(track) {
+      .forEach(function(track) {
 
+        try {
           track.stop();
-
+        } catch (e) {
+          console.error(
+            "TRACK STOP ERROR:",
+            e
+          );
         }
-      );
 
-    cameraStream =
-      null;
+      });
 
+    cameraStream = null;
   }
 
-  /*
-     PUTUS VIDEO
-  */
+  video.pause();
 
-  try {
-    video.pause();
-  } catch (e) {}
-
-  video.srcObject =
-    null;
-
-  /*
-     HILANGKAN CAMERA UI
-  */
+  video.srcObject = null;
 
   cameraBox.classList.remove(
     "active"
   );
-
 }
+
+
+
+
   
 
 
@@ -3751,28 +3654,29 @@ resultBox.innerText =
   " " +
   employeeName;
 
-/*
-   CAMERA MATI TOTAL
-*/
 
 stopCamera();
 
-/*
-   TARGET INI SUDAH SELESAI.
+completedTargetKey =
+  currentTarget
+    ? (
+        currentTarget.sheet +
+        "|" +
+        currentTarget.row +
+        "|" +
+        currentTarget.column
+      )
+    : "";
 
-   Kamera tidak boleh hidup lagi
-   sampai target BERBEDA dipilih.
-*/
+cameraHold = true;
 
-cameraHold =
-  true;
-
-currentTarget =
-  null;
+currentTarget = null;
 
 targetInfo.innerText =
   "WAITING FOR TARGET";
 
+
+    
 setTimeout(
   function() {
 
