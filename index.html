@@ -739,7 +739,7 @@ const DETECTOR_INPUT_SIZE =
 
 
 const TARGET_CHECK_INTERVAL =
-  500;
+  250;
 
 
 const SCAN_INTERVAL =
@@ -747,7 +747,7 @@ const SCAN_INTERVAL =
 
 
 const WARNING_TIME =
-  3000;
+  0;
 
 
 const CENTER_TOLERANCE =
@@ -900,6 +900,9 @@ let warningTimer =
 let lastWarning =
   "";
 
+  let dismissedWarning =
+  "";
+
 /* =========================================================
    STATUS
    ========================================================= */
@@ -918,7 +921,6 @@ function setStatus(
    WARNING
    ========================================================= */
 
-
 function showWarning(
   text
 ) {
@@ -926,7 +928,6 @@ function showWarning(
   clearTimeout(
     warningTimer
   );
-
 
   if (!text) {
 
@@ -937,17 +938,14 @@ function showWarning(
 
   }
 
-
   const parts =
     String(text).split(
       "\n\n"
     );
 
-
   const title =
     parts[0] ||
     "WARNING";
-
 
   const message =
     parts
@@ -955,56 +953,38 @@ function showWarning(
       .join("\n\n") ||
     "";
 
-
   document.getElementById(
     "warningTitle"
   ).innerText =
     title;
-
 
   document.getElementById(
     "warningMessage"
   ).innerText =
     message;
 
-
   warningBox.style.display =
     "block";
 
-
-  /*
-     AUTO CLOSE 3 DETIK
-  */
-
-  warningTimer =
-    setTimeout(
-      function() {
-
-        warningBox.style.display =
-          "none";
-
-      },
-      WARNING_TIME
-    );
-
 }
 
-  document.getElementById(
+
+document.getElementById(
   "warningClose"
 ).addEventListener(
   "click",
   function() {
 
-    clearTimeout(
-      warningTimer
-    );
+    dismissedWarning =
+      lastWarning;
 
     warningBox.style.display =
       "none";
 
   }
 );
-
+  
+ 
 
 document.getElementById(
   "warningOk"
@@ -2911,6 +2891,12 @@ if (
 ) {
 
   if (
+  data.warning &&
+  data.warning !==
+    dismissedWarning
+) {
+
+  if (
     data.warning !==
     lastWarning
   ) {
@@ -2918,11 +2904,13 @@ if (
     lastWarning =
       data.warning;
 
-    showWarning(
-      data.warning
-    );
-
   }
+
+  showWarning(
+    data.warning
+  );
+
+}
 
   setStatus(
     "ACTION REQUIRED"
@@ -2982,6 +2970,24 @@ if (
       data.row +
       "|" +
       column;
+
+if (
+  currentTarget &&
+  (
+    currentTarget.sheet +
+    "|" +
+    currentTarget.row +
+    "|" +
+    currentTarget.column
+  ) !==
+  newKey
+) {
+
+  dismissedWarning =
+    "";
+
+}
+    
 
 
      oldKey =
