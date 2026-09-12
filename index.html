@@ -735,15 +735,15 @@ const CAMERA_HEIGHT =
 
 
 const DETECTOR_INPUT_SIZE =
-  160;
+  128;
 
 
 const TARGET_CHECK_INTERVAL =
-  250;
+  500;
 
 
 const SCAN_INTERVAL =
-  250;
+  100;
 
 
 const WARNING_TIME =
@@ -897,7 +897,8 @@ let scanProcessing =
 
 let warningTimer =
   null;
-
+let lastWarning =
+  "";
 
 /* =========================================================
    STATUS
@@ -2817,9 +2818,16 @@ if (!target) {
 
 async function checkTarget() {
 
+  /*
+     JANGAN CEK TARGET
+     SAAT CAMERA SEDANG SCAN
+  */
+
   if (
     targetChecking ||
-    !databaseLoaded
+    !databaseLoaded ||
+    scanning ||
+    scanProcessing
   ) {
 
     return;
@@ -2898,19 +2906,32 @@ if (
      SHOW BEAUTIFUL WARNING
   */
 
+if (
+  data.warning
+) {
+
   if (
-    data.warning
+    data.warning !==
+    lastWarning
   ) {
+
+    lastWarning =
+      data.warning;
 
     showWarning(
       data.warning
     );
 
-    setStatus(
-      "ACTION REQUIRED"
-    );
-
   }
+
+  setStatus(
+    "ACTION REQUIRED"
+  );
+
+}
+
+
+  
   else {
 
     targetInfo.innerText =
@@ -2924,13 +2945,13 @@ if (
     
 
 
-    const column =
+     column =
       Number(
         data.column
       );
 
 
-    const allowed =
+     allowed =
       [
         1,
         5,
@@ -2955,7 +2976,7 @@ if (
     }
 
 
-    const newKey =
+     newKey =
       data.sheet +
       "|" +
       data.row +
@@ -2963,7 +2984,7 @@ if (
       column;
 
 
-    const oldKey =
+     oldKey =
       currentTarget
 
         ? currentTarget.sheet +
@@ -2985,7 +3006,7 @@ if (
       oldKey
     ) {
 
-      const sameValidation =
+       sameValidation =
         validateBeforeCamera(
           currentTarget,
           data.checklist
@@ -3076,7 +3097,7 @@ if (
        VALIDASI
     */
 
-    const validation =
+     validation =
       validateBeforeCamera(
         currentTarget,
         data.checklist
@@ -3400,21 +3421,21 @@ function findCenterFace(
   }
 
 
-  const width =
+   width =
     video.videoWidth ||
     CAMERA_WIDTH;
 
 
-  const height =
+   height =
     video.videoHeight ||
     CAMERA_HEIGHT;
 
 
-  const centerX =
+   centerX =
     width / 2;
 
 
-  const centerY =
+   centerY =
     height / 2;
 
 
@@ -3429,21 +3450,21 @@ function findCenterFace(
   detections.forEach(
     function(detection) {
 
-      const box =
+       box =
         detection.detection.box;
 
 
-      const faceX =
+       faceX =
         box.x +
         box.width / 2;
 
 
-      const faceY =
+       faceY =
         box.y +
         box.height / 2;
 
 
-      const distance =
+       distance =
         Math.hypot(
 
           faceX -
@@ -3487,21 +3508,21 @@ function findCenterFace(
      dengan tengah.
   */
 
-  const box =
+   box =
     bestFace.detection.box;
 
 
-  const faceX =
+   faceX =
     box.x +
     box.width / 2;
 
 
-  const faceY =
+   faceY =
     box.y +
     box.height / 2;
 
 
-  const normalizedX =
+   normalizedX =
     Math.abs(
       faceX -
       centerX
@@ -3509,7 +3530,7 @@ function findCenterFace(
     width;
 
 
-  const normalizedY =
+   normalizedY =
     Math.abs(
       faceY -
       centerY
@@ -3576,7 +3597,7 @@ async function scanFace() {
        DETECT SEMUA WAJAH
     */
 
-    const detections =
+     detections =
       await faceapi
 
         .detectAllFaces(
@@ -3633,7 +3654,7 @@ async function scanFace() {
        ambil yang paling dekat tengah.
     */
 
-    const centerFace =
+     centerFace =
       findCenterFace(
         detections
       );
@@ -3672,13 +3693,13 @@ async function scanFace() {
        MATCH
     */
 
-    const match =
+     match =
       faceMatcher.findBestMatch(
         centerFace.descriptor
       );
 
 
-    const employeeId =
+     employeeId =
       String(
         match.label ||
         ""
