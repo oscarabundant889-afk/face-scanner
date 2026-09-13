@@ -745,7 +745,7 @@ function apiRequest(
   /*
      API READ:
      faces / photo / target
-     boleh retry jika Apps Script sedang lambat/cold start.
+     retry TERUS jika Apps Script sedang lambat/cold start atau koneksi sementara gagal.
 
      API WRITE:
      scan
@@ -756,8 +756,15 @@ function apiRequest(
   const retryable =
     ["faces", "photo", "target"].includes(action);
 
+  /*
+     READ API HARUS TAHAN UNTUK OPERATOR.
+     faces / photo / target akan retry TERUS
+     sampai server kembali normal.
+     scan tetap 1x agar tidak berisiko menulis
+     attendance dua kali.
+  */
   const maxAttempts =
-    retryable ? 3 : 1;
+    retryable ? Infinity : 1;
 
   return new Promise(
     function(
@@ -813,16 +820,18 @@ function apiRequest(
                 attempt < maxAttempts
               ) {
 
+                /*
+                   Jangan tampilkan ERROR ke operator.
+                   Server mungkin sedang cold start,
+                   lambat, atau koneksi sedang drop.
+                */
                 setStatus(
-                  "RETRYING FACE API " +
-                  attempt +
-                  "/" +
-                  maxAttempts
+                  "CONNECTING TO FACE SERVER..."
                 );
 
                 setTimeout(
                   runAttempt,
-                  1200
+                  2000
                 );
 
                 return;
@@ -876,16 +885,18 @@ function apiRequest(
               attempt < maxAttempts
             ) {
 
+              /*
+                 Koneksi gagal sementara:
+                 tetap retry tanpa membebani operator
+                 dengan pesan error.
+              */
               setStatus(
-                "RECONNECTING FACE API " +
-                attempt +
-                "/" +
-                maxAttempts
+                "CONNECTING TO FACE SERVER..."
               );
 
               setTimeout(
                 runAttempt,
-                1200
+                2000
               );
 
               return;
@@ -2015,21 +2026,28 @@ async function preloadFaceSystem() {
         preloadPromise =
           null;
 
-
         console.error(
           "INITIAL LOAD ERROR:",
           error
         );
 
-
+        /*
+           Untuk operator, jangan berhenti permanen.
+           Kalau server/API gagal, coba lagi otomatis.
+        */
         setStatus(
-          "FACE SYSTEM ERROR"
+          "CONNECTING TO FACE SERVER..."
         );
 
-
         resultBox.innerText =
-          error.message ||
-          "FACE SYSTEM ERROR";
+          "";
+
+        setTimeout(
+          function() {
+            preloadFaceSystem();
+          },
+          3000
+        );
 
       }
 
