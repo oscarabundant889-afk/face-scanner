@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -91,80 +93,402 @@ h1{
 }
 
 
-
 #warning{
-  width:320px;
-  margin:8px auto;
-  padding:18px 16px 15px;
-  background:linear-gradient(145deg,#292929,#171717);
-  border:2px solid #ff9800;
-  border-radius:16px;
-  font-size:16px;
-  font-weight:bold;
-  display:none;
-  white-space:pre-line;
-  position:relative;
+
+  position:fixed;
+
+  left:50%;
+  top:50%;
+
+  transform:
+    translate(-50%,-50%)
+    perspective(1000px)
+    rotateX(0deg);
+
+  width:380px;
+  max-width:90vw;
+
+  padding:38px 30px 30px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #252525 0%,
+      #111 45%,
+      #050505 100%
+    );
+
+  border-radius:26px;
+
+  border:1px solid
+    rgba(255,180,0,.45);
+
   box-shadow:
-    0 0 10px rgba(255,152,0,.35),
-    0 0 25px rgba(255,152,0,.18);
+
+    0 35px 90px
+      rgba(0,0,0,.85),
+
+    0 0 35px
+      rgba(255,170,0,.18),
+
+    inset 0 1px 0
+      rgba(255,255,255,.18),
+
+    inset 0 -12px 30px
+      rgba(0,0,0,.65);
+
+  color:#fff;
+
+  font-size:19px;
+
+  font-weight:bold;
+
+  line-height:1.5;
+
+  text-align:center;
+
+  white-space:pre-line;
+
+  z-index:99999;
+
+  display:none;
+
+  overflow:hidden;
+
+  animation:
+    warning3D
+    .35s
+    cubic-bezier(.2,.8,.2,1);
+
 }
+
+
+/* TOP LIGHT */
+
+#warning::before{
+
+  content:"";
+
+  position:absolute;
+
+  top:0;
+  left:0;
+
+  width:100%;
+  height:4px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      #ffcc66,
+      #fff,
+      #ff9900,
+      transparent
+    );
+
+  box-shadow:
+    0 0 15px
+      rgba(255,170,0,.8);
+
+}
+
+
+/* WARNING ICON */
 
 #warningIcon{
-  font-size:34px;
-  line-height:34px;
-  margin-bottom:6px;
+
+  width:76px;
+  height:76px;
+
+  margin:
+    0 auto
+    18px;
+
+  display:flex;
+
+  align-items:center;
+  justify-content:center;
+
+  font-size:50px;
+
+  color:#ffd166;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(255,190,60,.20),
+      rgba(255,120,0,.04)
+    );
+
+  border:1px solid
+    rgba(255,190,60,.35);
+
+  border-radius:50%;
+
+  box-shadow:
+
+    0 0 15px
+      rgba(255,190,60,.35),
+
+    0 0 35px
+      rgba(255,140,0,.18),
+
+    inset 0 0 20px
+      rgba(255,190,60,.08);
+
+  animation:
+    warningPulse
+    1.5s
+    ease-in-out
+    infinite;
+
 }
+
+
+/* ICON PULSE */
+
+@keyframes warningPulse{
+
+  0%{
+    transform:scale(1);
+  }
+
+  50%{
+    transform:scale(1.08);
+  }
+
+  100%{
+    transform:scale(1);
+  }
+
+}
+
+
+/* TITLE */
 
 #warningTitle{
-  color:#ffb74d;
-  font-size:18px;
-  margin-bottom:10px;
+
+  font-size:23px;
+
+  font-weight:900;
+
+  letter-spacing:.5px;
+
+  margin-bottom:18px;
+
+  color:#fff;
+
+  text-shadow:
+
+    0 2px 5px
+      rgba(0,0,0,.8),
+
+    0 0 12px
+      rgba(255,190,80,.25);
+
 }
+
+
+/* MESSAGE */
 
 #warningMessage{
-  color:#fff;
-  line-height:1.45;
-  font-size:15px;
+
+  font-size:17px;
+
+  line-height:1.55;
+
+  white-space:pre-line;
+
+  margin-bottom:26px;
+
+  color:#e8e8e8;
+
 }
 
-#warningButtons{
-  margin-top:14px;
-}
 
-#warningOk{
-  border:0;
-  border-radius:8px;
-  padding:8px 28px;
-  font-size:15px;
-  font-weight:bold;
-  cursor:pointer;
-  background:#ff9800;
-  color:#111;
-}
+/* CLOSE X */
 
 #warningClose{
+
   position:absolute;
-  top:5px;
-  right:9px;
-  border:0;
-  background:transparent;
-  color:#aaa;
-  font-size:25px;
+
+  top:12px;
+  right:12px;
+
+  width:40px;
+  height:40px;
+
+  border:none;
+
+  border-radius:50%;
+
+  background:
+    linear-gradient(
+      145deg,
+      #444,
+      #222
+    );
+
+  color:#fff;
+
+  font-size:23px;
+
+  font-weight:bold;
+
   cursor:pointer;
-  line-height:25px;
+
+  box-shadow:
+
+    0 5px 15px
+      rgba(0,0,0,.5),
+
+    inset 0 1px 0
+      rgba(255,255,255,.15);
+
+  transition:.2s;
+
 }
+
+
+/* X HOVER */
 
 #warningClose:hover{
-  color:#fff;
+
+  transform:
+    rotate(90deg)
+    scale(1.08);
+
+  box-shadow:
+    0 0 15px
+      rgba(255,255,255,.2);
+
 }
 
 
+/* OK BUTTON */
+
+#warningOk{
+
+  min-width:125px;
+
+  padding:13px 30px;
+
+  border:none;
+
+  border-radius:12px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #dcdcdc
+    );
+
+  color:#111;
+
+  font-size:17px;
+
+  font-weight:900;
+
+  cursor:pointer;
+
+  box-shadow:
+
+    0 8px 20px
+      rgba(0,0,0,.5),
+
+    inset 0 1px 0
+      rgba(255,255,255,.9);
+
+  transition:.2s;
+
+}
 
 
+/* OK HOVER */
 
+#warningOk:hover{
+
+  transform:
+    translateY(-2px)
+    scale(1.04);
+
+}
+
+
+/* 3D OPEN */
+
+@keyframes warning3D{
+
+  0%{
+
+    opacity:0;
+
+    transform:
+      translate(-50%,-50%)
+      perspective(1000px)
+      rotateX(-35deg)
+      rotateY(8deg)
+      scale(.65);
+
+  }
+
+  55%{
+
+    opacity:1;
+
+    transform:
+      translate(-50%,-50%)
+      perspective(1000px)
+      rotateX(7deg)
+      rotateY(-2deg)
+      scale(1.04);
+
+  }
+
+  100%{
+
+    opacity:1;
+
+    transform:
+      translate(-50%,-50%)
+      perspective(1000px)
+      rotateX(0deg)
+      rotateY(0deg)
+      scale(1);
+
+  }
+
+}
+
+
+/* DARK BACKGROUND */
+
+#warning::after{
+
+  content:"";
+
+  position:fixed;
+
+  inset:0;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(255,170,0,.05),
+      rgba(0,0,0,.72)
+    );
+
+  backdrop-filter:blur(6px);
+
+  z-index:-1;
+
+}
 
 
   
+}
 
 #distance,
 #targetInfo,
@@ -239,26 +563,22 @@ h1{
 
 <div id="result"></div>
 
-
-
 <div id="warning">
+  <button id="warningClose" type="button">✕</button>
+
   <div id="warningIcon">⚠</div>
 
   <div id="warningTitle">
-    ACTION REQUIRED
+    WARNING
   </div>
 
-  <div id="warningMessage"></div>
-
-  <div id="warningButtons">
-    <button id="warningOk">OK</button>
+  <div id="warningMessage">
   </div>
 
-  <button id="warningClose" type="button">×</button>
+  <button id="warningOk" type="button">
+    OK
+  </button>
 </div>
-
-
-  
 
 <div id="distance"></div>
 
@@ -417,7 +737,7 @@ const CAMERA_HEIGHT =
 
 
 const DETECTOR_INPUT_SIZE =
-  160;
+  128;
 
 
 const TARGET_CHECK_INTERVAL =
@@ -429,7 +749,7 @@ const SCAN_INTERVAL =
 
 
 const WARNING_TIME =
-  5000;
+  0;
 
 
 const CENTER_TOLERANCE =
@@ -529,12 +849,8 @@ let faceMatcher =
 let cameraStream =
   null;
 
-let cameraRequestId = 0;
-  
-
-  let cameraRequestToken = 0;
-
-let cameraHold = false;
+let cameraRequestToken =
+  0;
 
 
 let scanTimer =
@@ -580,15 +896,28 @@ let preloadPromise =
 let targetChecking =
   false;
 
+let completedTargetKey =
+  "";
+
+let cameraHold =
+  false;
+
 let scanProcessing =
   false;
 
+let scanCooldownUntil =
+  0;
 
-let warningTimer = null;
+  
 
-let lastWarning = "";
 
-let dismissedWarning = "";
+let warningTimer =
+  null;
+let lastWarning =
+  "";
+
+  let dismissedWarning =
+  "";
 
 /* =========================================================
    STATUS
@@ -608,64 +937,84 @@ function setStatus(
    WARNING
    ========================================================= */
 
-function showWarning(text) {
+function showWarning(
+  text
+) {
 
-  clearTimeout(warningTimer);
+  clearTimeout(
+    warningTimer
+  );
 
-  lastWarning =
-    String(text || "").trim();
-
-  if (!lastWarning) {
+  if (!text) {
 
     warningBox.style.display =
       "none";
 
     return;
+
   }
 
-  const messageBox =
-    document.getElementById(
-      "warningMessage"
+  const parts =
+    String(text).split(
+      "\n\n"
     );
 
-  messageBox.innerText =
-    lastWarning;
+  const title =
+    parts[0] ||
+    "WARNING";
+
+  const message =
+    parts
+      .slice(1)
+      .join("\n\n") ||
+    "";
+
+  document.getElementById(
+    "warningTitle"
+  ).innerText =
+    title;
+
+  document.getElementById(
+    "warningMessage"
+  ).innerText =
+    message;
 
   warningBox.style.display =
     "block";
+
 }
 
 
-document
-  .getElementById("warningOk")
-  .addEventListener(
-    "click",
-    function() {
+document.getElementById(
+  "warningClose"
+).addEventListener(
+  "click",
+  function() {
 
-      dismissedWarning =
-        lastWarning;
+    dismissedWarning =
+      lastWarning;
 
-      warningBox.style.display =
-        "none";
+    warningBox.style.display =
+      "none";
 
-    }
-  );
+  }
+);
+  
+ document.getElementById(
+  "warningOk"
+).addEventListener(
+  "click",
+  function() {
 
+    dismissedWarning =
+      lastWarning;
 
-document
-  .getElementById("warningClose")
-  .addEventListener(
-    "click",
-    function() {
+    warningBox.style.display =
+      "none";
 
-      dismissedWarning =
-        lastWarning;
+  }
+);
 
-      warningBox.style.display =
-        "none";
-
-    }
-  );
   
 
 /* =========================================================
@@ -2164,6 +2513,7 @@ function timeToMinutes(
    TIME GAP
    ========================================================= */
 
+
 function validateTimeGap(
   target,
   checklist
@@ -2175,18 +2525,25 @@ function validateTimeGap(
     };
   }
 
+
   const column =
-    Number(target.column);
+    Number(
+      target.column
+    );
+
 
   /*
-     TIME IN:
-     E  = 5
-     X  = 24
-     AI = 35
+     E  → C
+     X  → V
+     AI → AG
+
+     Hanya Time In yang dicek.
   */
 
   if (
-    ![5,24,35].includes(column)
+    ![5, 24, 35].includes(
+      column
+    )
   ) {
 
     return {
@@ -2195,14 +2552,24 @@ function validateTimeGap(
 
   }
 
+
+  /*
+     Ambil TIME OUT dari:
+
+     E → C
+     X → V
+     AI → AG
+
+     BUKAN System Time Out D/W/AH.
+  */
+
   const timeOut =
-    String(
-      checklist.timeOut || ""
-    ).trim();
+    checklist.timeOut;
+
 
   /*
      Kalau Time Out belum ada,
-     Time In boleh dilanjutkan.
+     langsung boleh lanjut.
   */
 
   if (
@@ -2216,10 +2583,12 @@ function validateTimeGap(
 
   }
 
+
   const outMinutes =
     timeToMinutes(
       timeOut
     );
+
 
   if (
     outMinutes === null
@@ -2231,63 +2600,55 @@ function validateTimeGap(
 
   }
 
+
   /*
-     AMBIL JAM COLOMBO
+     Waktu sekarang
+  */
+
+  /*
+     WAKTU WAJIB MENGIKUTI COLOMBO / Asia/Colombo
+     Tidak bergantung pada timezone laptop/browser.
   */
 
   const colomboParts =
     new Intl.DateTimeFormat(
       "en-GB",
       {
-        timeZone:
-          "Asia/Colombo",
-        hour:
-          "2-digit",
-        minute:
-          "2-digit",
-        hourCycle:
-          "h23"
+        timeZone: "Asia/Colombo",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
       }
-    )
-    .formatToParts(
-      new Date()
+    ).formatToParts(new Date());
+
+  const colomboHour =
+    Number(
+      colomboParts.find(function(p) {
+        return p.type === "hour";
+      }).value
     );
 
-  let hour = 0;
-  let minute = 0;
-
-  colomboParts.forEach(
-    function(part) {
-
-      if (
-        part.type === "hour"
-      ) {
-        hour =
-          Number(part.value);
-      }
-
-      if (
-        part.type === "minute"
-      ) {
-        minute =
-          Number(part.value);
-      }
-
-    }
-  );
+  const colomboMinute =
+    Number(
+      colomboParts.find(function(p) {
+        return p.type === "minute";
+      }).value
+    );
 
   const nowMinutes =
-    hour * 60 +
-    minute;
+    colomboHour * 60 +
+    colomboMinute;
+
 
   /*
-     HITUNG SELISIH
-     termasuk lewat tengah malam
+     Hitung selisih.
+     Mendukung lewat tengah malam.
   */
 
   let difference =
     nowMinutes -
     outMinutes;
+
 
   if (
     difference < 0
@@ -2298,9 +2659,10 @@ function validateTimeGap(
 
   }
 
+
   /*
-     1 MENIT ATAU KURANG
-     = TIDAK BOLEH
+     SELISIH 1 MENIT ATAU KURANG
+     → TIDAK BOLEH SCAN
   */
 
   if (
@@ -2319,6 +2681,12 @@ function validateTimeGap(
 
   }
 
+
+  /*
+     Lebih dari 1 menit
+     → BOLEH SCAN
+  */
+
   return {
     ok: true
   };
@@ -2330,94 +2698,66 @@ function validateTimeGap(
    VALIDATE BEFORE CAMERA
    ========================================================= */
 
-
 function validateBeforeCamera(
   target,
   checklist
 ) {
 
-  if (!target) {
+if (!target) {
 
     return {
-
-      ok: false,
-
+      ok:false,
       message:
-        "TARGET NOT READY"
-
+        "TARGET NOT READY\n\n" +
+        "Please select a valid scan target."
     };
 
   }
 
+
   const column =
-    Number(target.column);
+    Number(
+      target.column
+    );
+
 
   /*
-     TIME IN E / X / AI
-     harus sudah punya Employee No
+     E → EMPLOYEE HARUS SUDAH ADA + REMARK G WAJIB
   */
 
-  if (
-    [5,24,35].includes(column)
-  ) {
+  if (column === 5) {
 
     const employeeNo =
       checklist
-
-        ? String(
-            checklist.employeeNo ||
-            ""
-          ).trim()
-
+        ? String(checklist.employeeNo || "").trim()
         : "";
 
-    if (
-      !employeeNo ||
-      employeeNo ===
-        "NOT YET"
-    ) {
-
+    if (!employeeNo || employeeNo === "NOT YET") {
       return {
-
-        ok: false,
-
+        ok:false,
         message:
           "TIME IN NOT ALLOWED\n\n" +
-          "Employee Number has not been scanned yet."
-
+          "Please scan Employee No in column A first."
       };
-
     }
-
-  }
-
-  /*
-     E → G WAJIB DIISI
-  */
-
-  if (
-    column === 5
-  ) {
 
     const remark =
       checklist
-
         ? String(
             checklist.remark ||
             ""
           ).trim()
-
         : "";
+
 
     if (
       !remark ||
-      remark ===
-        "NOT YET"
+      remark === "NOT YET"
     ) {
 
       return {
 
-        ok: false,
+        ok:false,
 
         message:
           "REMARK REQUIRED\n\n" +
@@ -2429,33 +2769,44 @@ function validateBeforeCamera(
 
   }
 
+
   /*
-     AI → AK WAJIB DIISI
+     AI → EMPLOYEE HARUS SUDAH ADA + REMARK AK WAJIB
   */
 
-  if (
-    column === 35
-  ) {
+  if (column === 35) {
+
+    const employeeNo =
+      checklist
+        ? String(checklist.employeeNo || "").trim()
+        : "";
+
+    if (!employeeNo || employeeNo === "NOT YET") {
+      return {
+        ok:false,
+        message:
+          "TIME IN NOT ALLOWED\n\n" +
+          "Please scan Employee No in column AE first."
+      };
+    }
 
     const remark =
       checklist
-
         ? String(
             checklist.remark ||
             ""
           ).trim()
-
         : "";
+
 
     if (
       !remark ||
-      remark ===
-        "NOT YET"
+      remark === "NOT YET"
     ) {
 
       return {
 
-        ok: false,
+        ok:false,
 
         message:
           "REMARK REQUIRED\n\n" +
@@ -2467,57 +2818,116 @@ function validateBeforeCamera(
 
   }
 
+
   /*
-     CEK TIME GAP
+     X → EMPLOYEE HARUS SUDAH ADA
   */
 
-  return validateTimeGap(
-    target,
-    checklist
-  );
+  if (column === 24) {
+
+    const employeeNo =
+      checklist
+        ? String(checklist.employeeNo || "").trim()
+        : "";
+
+    if (!employeeNo || employeeNo === "NOT YET") {
+      return {
+        ok:false,
+        message:
+          "TIME IN NOT ALLOWED\n\n" +
+          "Please scan Employee No in column T first."
+      };
+    }
+  }
+
+
+  /*
+     TIME GAP
+  */
+
+  const gap =
+    validateTimeGap(
+      target,
+      checklist
+    );
+
+
+  if (!gap.ok) {
+
+    return {
+
+      ok:false,
+
+      message:
+        gap.message
+
+    };
+
+  }
+
+
+  return {
+    ok:true
+  };
 
 }
+
   
+  
+
+
+
+
+  
+
+
 
 /* =========================================================
    TARGET CHECK
    ========================================================= */
 
-
-
-/* =========================================================
-   TARGET CHECK - FINAL
-   ========================================================= */
-
 async function checkTarget() {
 
-  if (
-    targetChecking ||
-    !databaseLoaded
-  ) {
-    return;
-  }
+  /*
+     JANGAN CEK TARGET
+     SAAT CAMERA SEDANG SCAN
+  */
 
-  targetChecking = true;
+  
+if (
+  targetChecking ||
+  !databaseLoaded ||
+  scanning ||
+  scanProcessing
+) {
+
+  return;
+
+}
+
+  targetChecking =
+    true;
+
 
   try {
 
     const data =
       await getCurrentTarget();
 
+
     if (
       !data ||
       !data.ok
     ) {
+
       return;
+
     }
 
 
-    /* =====================================================
-       UPDATE CHECKLIST
-       ===================================================== */
-
-    if (data.checklist) {
+    if (
+      data.checklist
+    ) {
 
       updateChecklist(
         data.checklist
@@ -2526,67 +2936,120 @@ async function checkTarget() {
     }
 
 
-    /* =====================================================
-       NO TARGET
-       ===================================================== */
-
-    if (!data.ready) {
-
-      if (currentTarget) {
-
-        stopCamera();
-
-        currentTarget = null;
-
-        scanLocked = false;
-
-        stableCount = 0;
-
-        lastEmployee = "";
-
-      }
-
-      cameraHold = false;
-
-      targetInfo.innerText =
-        "WAITING FOR TARGET";
-
-      return;
-
-    }
+    /*
+       TARGET TIDAK READY
+    */
 
 
-    /* =====================================================
-       CHECK ALLOWED COLUMN
-       ===================================================== */
 
-    const column =
-      Number(data.column);
+if (
+  !data.ready
+) {
 
-    const allowed = [
-      1,   // A
-      5,   // E
-      13,  // M
-      20,  // T
-      24,  // X
-      31,  // AE
-      35   // AI
-    ];
+  /*
+     STOP CAMERA
+     WITHOUT REQUESTING
+     CAMERA PERMISSION AGAIN
+  */
+
+  stopCamera();
+
+
+  /*
+     CLEAR CURRENT TARGET
+  */
+
+  currentTarget =
+    null;
+
+  scanLocked =
+    false;
+
+  stableCount =
+    0;
+
+  lastEmployee =
+    "";
+
+
+  /*
+     SHOW BEAUTIFUL WARNING
+  */
+
+if (
+  data.warning
+) {
+
+
+if (
+  data.warning &&
+  data.warning !==
+    dismissedWarning
+) {
+
+  lastWarning =
+    data.warning;
+
+  showWarning(
+    data.warning
+  );
+
+}
+
+  
+  setStatus(
+    "ACTION REQUIRED"
+  );
+
+}
+
+
+  
+  else {
+
+    targetInfo.innerText =
+      "WAITING FOR TARGET";
+
+  }
+
+
+  return;
+}
+    
+
+
+     column =
+      Number(
+        data.column
+      );
+
+
+     allowed =
+      [
+        1,
+        5,
+        13,
+        20,
+        24,
+        31,
+        35
+      ];
+
 
     if (
       !data.sheet ||
       !data.row ||
-      !allowed.includes(column)
+      !allowed.includes(
+        column
+      )
     ) {
+
       return;
+
     }
 
 
-    /* =====================================================
-       TARGET KEY
-       ===================================================== */
-
-    const newKey =
+     newKey =
       data.sheet +
       "|" +
       data.row +
@@ -2594,147 +3057,149 @@ async function checkTarget() {
       column;
 
 
-    const oldKey =
+
+if (
+  newKey ===
+  completedTargetKey
+) {
+
+  cameraHold =
+    true;
+
+  stopCamera();
+
+  return;
+
+}
+    
+    
+
+if (
+  currentTarget &&
+  (
+    currentTarget.sheet +
+    "|" +
+    currentTarget.row +
+    "|" +
+    currentTarget.column
+  ) !==
+  newKey
+) {
+
+  dismissedWarning =
+    "";
+
+  completedTargetKey =
+    "";
+
+}
+    
+
+
+     oldKey =
       currentTarget
+
         ? currentTarget.sheet +
           "|" +
           currentTarget.row +
           "|" +
           currentTarget.column
+
         : "";
 
 
-    /* =====================================================
-       TARGET YANG SAMA
-       
-       PENTING:
-       - Jangan membuat warning berulang.
-       - Kalau warning sudah ditutup, jangan tampilkan lagi.
-       - Kalau kondisi sudah benar, CAMERA BOLEH START
-         TANPA REFRESH.
-       ===================================================== */
+    /*
+       TARGET SAMA
+       → jangan restart camera
+    */
 
-    if (newKey === oldKey) {
+    if (
+      newKey ===
+      oldKey
+    ) {
 
-      const validation =
+       sameValidation =
         validateBeforeCamera(
           currentTarget,
           data.checklist
         );
 
 
-      /* ================================================
-         TARGET MASIH SALAH
-         ================================================ */
+if (!sameValidation.ok) {
 
-      if (!validation.ok) {
+  lastWarning =
+    sameValidation.message;
 
-        setStatus(
-          "ACTION REQUIRED"
-        );
+  if (
+    sameValidation.message !==
+    dismissedWarning
+  ) {
 
+    showWarning(
+      sameValidation.message
+    );
 
-        /*
-         * WARNING hanya tampil sekali.
-         *
-         * Kalau warning yang sama sedang tampil,
-         * jangan panggil showWarning lagi.
-         */
+  }
 
-        const warningVisible =
-          warningBox.style.display === "block";
+  setStatus(
+    "ACTION REQUIRED"
+  );
 
+  stopCamera();
+}
 
-        if (
-          validation.message !==
-            dismissedWarning &&
-          (
-            !warningVisible ||
-            lastWarning !==
-              validation.message
-          )
-        ) {
-
-          showWarning(
-            validation.message
-          );
-
-        }
-
-
-        /*
-         * CAMERA HARUS OFF
-         */
-
-        stopCamera();
-
-        return;
-
-      }
-
-
-      /* ================================================
-         TARGET SUDAH BENAR
-         
-         Contoh:
-         G sudah diisi
-         AK sudah diisi
-         atau Time Gap sudah > 1 menit
-         
-         TIDAK PERLU REFRESH.
-         CAMERA LANGSUNG BOLEH HIDUP.
-         ================================================ */
-
-      warningBox.style.display =
-        "none";
-
-      dismissedWarning = "";
-
-      if (
-        !cameraHold &&
-        !scanning &&
-        !scanProcessing
-      ) {
-
-        await startCamera();
-
-      }
-
+      
       return;
 
     }
 
 
-    /* =====================================================
-       TARGET BARU
-       ===================================================== */
-
-    if (scanning) {
-
-      stopCamera();
-
-    }
 
 
-    scanLocked = false;
+/*
+   TARGET BARU
+*/
 
-    stableCount = 0;
+if (
+  newKey !==
+  completedTargetKey
+) {
 
-    lastEmployee = "";
+  cameraHold =
+    false;
+
+}
+
+if (
+  cameraHold
+) {
+
+  stopCamera();
+
+  return;
+
+}
+
+if (
+  scanning
+) {
+  stopCamera();
+}
 
 
-    /*
-     * Target baru = lepaskan HOLD.
-     */
+    
 
-    cameraHold = false;
-
-    dismissedWarning = "";
+    scanLocked =
+      false;
 
 
-    /* =====================================================
-       SET CURRENT TARGET
-       ===================================================== */
+    stableCount =
+      0;
+
+
+    lastEmployee =
+      "";
+
 
     currentTarget = {
 
@@ -2742,7 +3207,9 @@ async function checkTarget() {
         data.sheet,
 
       row:
-        Number(data.row),
+        Number(
+          data.row
+        ),
 
       column:
         column
@@ -2754,13 +3221,18 @@ async function checkTarget() {
       "TARGET: " +
       data.sheet +
       "!" +
-      columnToLetter(column) +
+      columnToLetter(
+        column
+      ) +
       data.row;
 
 
-    resultBox.innerText = "";
+    resultBox.innerText =
+      "";
 
-    distanceBox.innerText = "";
+
+    distanceBox.innerText =
+      "";
 
 
     updateChecklist(
@@ -2768,54 +3240,54 @@ async function checkTarget() {
     );
 
 
-    /* =====================================================
-       VALIDATE TARGET BARU
-       ===================================================== */
+    /*
+       VALIDASI
+    */
 
-    const validation =
+     validation =
       validateBeforeCamera(
         currentTarget,
         data.checklist
       );
 
 
-    /* =====================================================
-       TARGET BARU TIDAK VALID
-       ===================================================== */
+if (
+  !validation.ok
+) {
 
-    if (!validation.ok) {
+  lastWarning =
+    validation.message;
 
-      setStatus(
-        "ACTION REQUIRED"
-      );
+  if (
+    validation.message !==
+    dismissedWarning
+  ) {
 
+    showWarning(
+      validation.message
+    );
 
-      /*
-       * Warning hanya satu kali.
-       */
+  }
 
-      showWarning(
-        validation.message
-      );
+  setStatus(
+    "ACTION REQUIRED"
+  );
 
+  stopCamera();
 
-      /*
-       * Camera jangan hidup.
-       */
+  return;
 
-      stopCamera();
-
-      return;
-
-    }
+}
 
 
-    /* =====================================================
-       TARGET BARU VALID
-       ===================================================== */
+
+    
+
+    /*
+       CAMERA ON
+    */
 
     await startCamera();
-
 
   } catch (error) {
 
@@ -2826,15 +3298,13 @@ async function checkTarget() {
 
   } finally {
 
-    targetChecking = false;
+    targetChecking =
+      false;
 
   }
 
 }
 
-
-
-  
 
 /* =========================================================
    TARGET MONITOR
@@ -2864,65 +3334,124 @@ function startTargetMonitor() {
 
 
 /* =========================================================
-   START CAMERA - FINAL
+   START CAMERA
    ========================================================= */
 
 
 async function startCamera() {
 
-  if (cameraHold) {
+  if (scanning || cameraHold) {
     return;
   }
 
-  if (scanning) {
+  /*
+     FACE SYSTEM MUST BE READY
+  */
+
+  if (
+    !modelsLoaded ||
+    !databaseLoaded ||
+    !faceMatcher
+  ) {
+
+    showWarning(
+      "FACE SYSTEM NOT READY"
+    );
+
     return;
   }
-
-  const requestId =
-    ++cameraRequestId;
 
   try {
 
-    const stream =
-      await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: {
-            ideal: CAMERA_WIDTH
-          },
-          height: {
-            ideal: CAMERA_HEIGHT
-          },
-          facingMode: "user"
-        },
-        audio: false
-      });
-
     /*
-     * Kalau request camera ini sudah dibatalkan
-     * sebelum getUserMedia selesai,
-     * langsung matikan stream yang baru didapat.
-     */
+       CAMERA REQUEST TOKEN
+
+       Mencegah request getUserMedia yang masih berjalan
+       menghidupkan kamera kembali setelah stopCamera().
+    */
+
+    const requestToken =
+      ++cameraRequestToken;
+
+    let stream = cameraStream;
+
+    const existingVideoTrack =
+      stream &&
+      stream.getVideoTracks &&
+      stream.getVideoTracks()[0];
+
     if (
-      requestId !== cameraRequestId ||
-      cameraHold
+      !stream ||
+      !existingVideoTrack ||
+      existingVideoTrack.readyState === "ended"
     ) {
 
-      stream
-        .getTracks()
-        .forEach(function(track) {
-          track.stop();
+      stream =
+        await navigator.mediaDevices.getUserMedia({
+
+          video: {
+
+            width: {
+              ideal: CAMERA_WIDTH
+            },
+
+            height: {
+              ideal: CAMERA_HEIGHT
+            },
+
+            facingMode: "user"
+
+          },
+
+          audio: false
+
         });
+
+      /*
+         Kalau selama menunggu kamera ada stopCamera(),
+         atau user sudah masuk mode WAITING,
+         stream baru langsung dimatikan.
+      */
+
+      if (
+        requestToken !== cameraRequestToken ||
+        cameraHold ||
+        !currentTarget
+      ) {
+
+        stream
+          .getTracks()
+          .forEach(function(track) {
+            track.stop();
+          });
+
+        return;
+      }
+
+      cameraStream =
+        stream;
+
+    }
+
+    /*
+       Pastikan request lama tidak boleh meneruskan kamera.
+    */
+
+    if (
+      requestToken !== cameraRequestToken ||
+      cameraHold ||
+      !currentTarget
+    ) {
 
       return;
     }
 
-    cameraStream =
-      stream;
-
     cameraStream
       .getVideoTracks()
       .forEach(function(track) {
+
         track.enabled = true;
+
       });
 
     video.srcObject =
@@ -2930,85 +3459,51 @@ async function startCamera() {
 
     await video.play();
 
-    /*
-     * Cek sekali lagi setelah video play.
-     */
-    if (
-      requestId !== cameraRequestId ||
-      cameraHold
-    ) {
-
-      stopCamera();
-
-      return;
-    }
-
     cameraBox.classList.add(
       "active"
     );
 
-    scanning = true;
+    scanning =
+      true;
 
-    stableCount = 0;
-    lastEmployee = "";
-    scanLocked = false;
+    scanLocked =
+      false;
+
+    stableCount =
+      0;
+
+    lastEmployee =
+      "";
 
     setStatus(
-      "READY TO SCAN"
+      "CAMERA READY"
     );
+
+    resultBox.innerText =
+      "LOOK AT THE CAMERA";
 
     startScanLoop();
 
   } catch (error) {
-
-    /*
-     * Kalau request sudah dibatalkan,
-     * jangan tampilkan error.
-     */
-    if (
-      requestId !== cameraRequestId
-    ) {
-      return;
-    }
 
     console.error(
       "CAMERA ERROR:",
       error
     );
 
-    scanning = false;
-
-    cameraStream = null;
-
-    video.srcObject = null;
-
-    cameraBox.classList.remove(
-      "active"
-    );
+    scanning =
+      false;
 
     setStatus(
       "CAMERA ERROR"
     );
 
     resultBox.innerText =
-      "CAMERA ERROR\n" +
-      (
-        error &&
-        error.message
-          ? error.message
-          : "Unable to access camera."
-      );
+      "PLEASE ALLOW CAMERA ACCESS";
+
   }
+
 }
-
-
-
-
-
-
-  
-
-  
 
   
 
@@ -3044,24 +3539,24 @@ function startScanLoop() {
 
 
 /* =========================================================
-   STOP CAMERA - FINAL
+   STOP SCAN, KEEP CAMERA
    ========================================================= */
 
-function stopCamera() {
+function stopScanKeepCamera() {
 
-  /*
-   * Batalkan semua request camera
-   * yang masih berjalan.
-   */
-  cameraRequestId++;
+  cameraRequestToken++;
 
-  scanning = false;
+  scanning =
+    false;
 
-  scanLocked = false;
+  scanLocked =
+    false;
 
-  stableCount = 0;
+  stableCount =
+    0;
 
-  lastEmployee = "";
+  lastEmployee =
+    "";
 
   if (scanTimer) {
 
@@ -3069,45 +3564,107 @@ function stopCamera() {
       scanTimer
     );
 
-    scanTimer = null;
+    scanTimer =
+      null;
+
   }
 
   if (cameraStream) {
 
     cameraStream
-      .getTracks()
-      .forEach(function(track) {
+      .getVideoTracks()
+      .forEach(
+        function(track) {
 
-        try {
-          track.stop();
-        } catch (e) {
-          console.error(
-            "TRACK STOP ERROR:",
-            e
-          );
+          track.enabled =
+            false;
+
         }
+      );
 
-      });
-
-    cameraStream = null;
   }
 
-  video.pause();
-
-  video.srcObject = null;
+  video.srcObject =
+    cameraStream || null;
 
   cameraBox.classList.remove(
     "active"
   );
+
 }
 
 
+/* =========================================================
+   STOP CAMERA
+   ========================================================= */
+
+function stopCamera() {
+
+  /* Batalkan startCamera() yang mungkin masih menunggu getUserMedia(). */
+  cameraRequestToken++;
+
+  scanning =
+    false;
 
 
-  
+  scanLocked =
+    false;
 
 
-  
+  stableCount =
+    0;
+
+
+  lastEmployee =
+    "";
+
+
+  if (
+    scanTimer
+  ) {
+
+    clearInterval(
+      scanTimer
+    );
+
+
+    scanTimer =
+      null;
+
+  }
+
+
+  if (
+    cameraStream
+  ) {
+
+    cameraStream
+      .getTracks()
+      .forEach(
+        function(track) {
+
+          track.stop();
+
+        }
+      );
+
+
+    cameraStream =
+      null;
+
+  }
+
+
+  video.srcObject =
+    null;
+
+
+  cameraBox.classList.remove(
+    "active"
+  );
+
+}
+
 
 /* =========================================================
    FIND CENTER FACE
@@ -3127,21 +3684,21 @@ function findCenterFace(
   }
 
 
-  const width =
+   width =
     video.videoWidth ||
     CAMERA_WIDTH;
 
 
-  const height =
+   height =
     video.videoHeight ||
     CAMERA_HEIGHT;
 
 
-  const centerX =
+   centerX =
     width / 2;
 
 
-  const centerY =
+   centerY =
     height / 2;
 
 
@@ -3156,21 +3713,21 @@ function findCenterFace(
   detections.forEach(
     function(detection) {
 
-      const box =
+       box =
         detection.detection.box;
 
 
-      const faceX =
+       faceX =
         box.x +
         box.width / 2;
 
 
-      const faceY =
+       faceY =
         box.y +
         box.height / 2;
 
 
-      const distance =
+       distance =
         Math.hypot(
 
           faceX -
@@ -3214,21 +3771,21 @@ function findCenterFace(
      dengan tengah.
   */
 
-  const box =
+   box =
     bestFace.detection.box;
 
 
-  const faceX =
+   faceX =
     box.x +
     box.width / 2;
 
 
-  const faceY =
+   faceY =
     box.y +
     box.height / 2;
 
 
-  const normalizedX =
+   normalizedX =
     Math.abs(
       faceX -
       centerX
@@ -3236,7 +3793,7 @@ function findCenterFace(
     width;
 
 
-  const normalizedY =
+   normalizedY =
     Math.abs(
       faceY -
       centerY
@@ -3269,6 +3826,10 @@ function findCenterFace(
    ========================================================= */
 
 async function scanFace() {
+
+  if (Date.now() < scanCooldownUntil) {
+    return;
+  }
 
   if (
     !scanning ||
@@ -3303,7 +3864,7 @@ async function scanFace() {
        DETECT SEMUA WAJAH
     */
 
-    const detections =
+    let detections =
       await faceapi
 
         .detectAllFaces(
@@ -3405,7 +3966,7 @@ async function scanFace() {
       );
 
 
-    const employeeId =
+     employeeId =
       String(
         match.label ||
         ""
@@ -3616,23 +4177,33 @@ async function scanFace() {
     }
 
 
-    
-/*
-   SUCCESS
-*/
+    /*
+       SUCCESS
+    */
 
-setStatus(
-  "SCAN SUCCESS"
-);
-
-resultBox.innerText =
-  "SUCCESS\n" +
-  employeeId +
-  " " +
-  employeeName;
+    setStatus(
+      "SCAN SUCCESS"
+    );
 
 
-stopCamera();
+    resultBox.innerText =
+      "SUCCESS\n" +
+      employeeId +
+      " " +
+      employeeName;
+
+
+    /*
+       SELESAI SCAN
+       Hentikan DETEKSI, tetapi pertahankan
+       cameraStream supaya scan berikutnya
+       tidak perlu membuka camera baru.
+    */
+
+    stopScanKeepCamera();
+
+    scanCooldownUntil =
+      Date.now() + 1200;
 
 completedTargetKey =
   currentTarget
@@ -3645,27 +4216,32 @@ completedTargetKey =
       )
     : "";
 
-cameraHold = true;
+cameraHold =
+  true;
 
-currentTarget = null;
-
-targetInfo.innerText =
-  "WAITING FOR TARGET";
-
-
+currentTarget =
+  null;
     
-setTimeout(
-  function() {
-
-    resultBox.innerText =
-      "";
-
-  },
-  1800
-);
 
 
-    
+    targetInfo.innerText =
+      "WAITING FOR TARGET";
+
+
+    /*
+       Bersihkan tulisan SUCCESS
+       setelah 1.8 detik.
+    */
+
+    setTimeout(
+      function() {
+
+        resultBox.innerText =
+          "";
+
+      },
+      1800
+    );
 
 
   } catch (error) {
@@ -3759,3 +4335,8 @@ document.addEventListener(
 
 </body>
 </html>
+
+
+============================================================
+SELESAI KODE index.html
+============================================================
