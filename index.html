@@ -421,7 +421,7 @@ const DETECTOR_INPUT_SIZE =
 
 
 const TARGET_CHECK_INTERVAL =
-  250;
+  1000;
 
 
 const SCAN_INTERVAL =
@@ -1025,7 +1025,7 @@ async function getCurrentTarget() {
   return await apiRequest(
     "target",
     {},
-    10000
+    30000
   );
 
 }
