@@ -902,6 +902,14 @@ let completedTargetKey =
 let cameraHold =
   false;
 
+/*
+   HARD CAMERA LOCK
+   Setelah target SUCCESS, kamera tidak boleh
+   hidup lagi sampai target benar-benar berubah.
+*/
+let cameraDisabledForCompletedTarget =
+  false;
+
 let scanProcessing =
   false;
 
@@ -3063,10 +3071,24 @@ if (
   completedTargetKey
 ) {
 
+  /*
+     TARGET SUDAH SELESAI.
+     Jangan pernah hidupkan kamera lagi
+     untuk target yang sama.
+  */
   cameraHold =
     true;
 
+  cameraDisabledForCompletedTarget =
+    true;
+
+  currentTarget =
+    null;
+
   stopCamera();
+
+  targetInfo.innerText =
+    "WAITING FOR TARGET";
 
   return;
 
@@ -3091,6 +3113,9 @@ if (
 
   completedTargetKey =
     "";
+
+  cameraDisabledForCompletedTarget =
+    false;
 
 }
     
@@ -3166,6 +3191,9 @@ if (
 ) {
 
   cameraHold =
+    false;
+
+  cameraDisabledForCompletedTarget =
     false;
 
 }
@@ -3340,7 +3368,16 @@ function startTargetMonitor() {
 
 async function startCamera() {
 
-  if (scanning || cameraHold) {
+  /*
+     HARD STOP:
+     Target sebelumnya sudah SUCCESS.
+     Jangan buka camera lagi sampai target berubah.
+  */
+  if (
+    scanning ||
+    cameraHold ||
+    cameraDisabledForCompletedTarget
+  ) {
     return;
   }
 
@@ -3514,6 +3551,12 @@ async function startCamera() {
 function startScanLoop() {
 
   if (
+    cameraDisabledForCompletedTarget
+  ) {
+    return;
+  }
+
+  if (
     scanTimer
   ) {
 
@@ -3655,9 +3698,20 @@ function stopCamera() {
   }
 
 
+  try {
+    video.pause();
+  } catch (e) {}
+
   video.srcObject =
     null;
 
+  /*
+     Lepaskan media element supaya browser
+     benar-benar melepas camera device.
+  */
+  try {
+    video.load();
+  } catch (e) {}
 
   cameraBox.classList.remove(
     "active"
@@ -4195,12 +4249,18 @@ async function scanFace() {
 
     /*
        SELESAI SCAN
-       Hentikan DETEKSI, tetapi pertahankan
-       cameraStream supaya scan berikutnya
-       tidak perlu membuka camera baru.
+       /* 
+       SUCCESS = HARD CAMERA OFF.
+       Target langsung dikunci agar target monitor
+       tidak dapat menyalakan camera kembali.
     */
+    cameraHold =
+      true;
 
-stopCamera();
+    cameraDisabledForCompletedTarget =
+      true;
+
+    stopCamera();
 
 scanCooldownUntil =
   Date.now() + 1200;
@@ -4339,6 +4399,3 @@ document.addEventListener(
 </html>
 
 
-============================================================
-SELESAI KODE index.html
-============================================================
