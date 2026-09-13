@@ -4200,10 +4200,12 @@ async function scanFace() {
        tidak perlu membuka camera baru.
     */
 
-    stopScanKeepCamera();
+stopCamera();
 
-    scanCooldownUntil =
-      Date.now() + 1200;
+scanCooldownUntil =
+  Date.now() + 1200;
+
+    
 
 completedTargetKey =
   currentTarget
