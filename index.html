@@ -421,7 +421,7 @@ const DETECTOR_INPUT_SIZE =
 
 
 const TARGET_CHECK_INTERVAL =
-  100;
+  500;
 
 
 const SCAN_INTERVAL =
@@ -802,7 +802,7 @@ function apiRequest(
           retryable
             ? (
                 isTargetRequest
-                  ? Math.max(timeoutMs, 2500)
+                  ? Math.max(timeoutMs, 5000)
                   : Math.max(timeoutMs, 45000)
               )
             : timeoutMs;
@@ -1035,7 +1035,7 @@ async function getCurrentTarget() {
   return await apiRequest(
     "target",
     {},
-    2500
+    5000
   );
 
 }
