@@ -354,7 +354,7 @@ h1{
 <script>
 
 /* =========================================================
-   FACE SCANNER INSTANT
+   FACE SCANNER FINAL
    =========================================================
 
    ALUR:
@@ -421,11 +421,11 @@ const DETECTOR_INPUT_SIZE =
 
 
 const TARGET_CHECK_INTERVAL =
-  500;
+  200;
 
 
 const SCAN_INTERVAL =
-  100;
+  150;
 
 
 const WARNING_TIME =
@@ -795,22 +795,13 @@ function apiRequest(
         let finished =
           false;
 
-        const isTargetRequest =
-          action === "target";
-
         const thisTimeout =
           retryable
-            ? (
-                isTargetRequest
-                  ? Math.max(timeoutMs, 5000)
-                  : Math.max(timeoutMs, 45000)
+            ? Math.max(
+                timeoutMs,
+                45000
               )
             : timeoutMs;
-
-        const retryDelay =
-          isTargetRequest
-            ? 300
-            : 2000;
 
         const timeout =
           setTimeout(
@@ -841,7 +832,7 @@ function apiRequest(
 
                 setTimeout(
                   runAttempt,
-                  retryDelay
+                  2000
                 );
 
                 return;
@@ -906,7 +897,7 @@ function apiRequest(
 
               setTimeout(
                 runAttempt,
-                retryDelay
+                2000
               );
 
               return;
@@ -1035,7 +1026,7 @@ async function getCurrentTarget() {
   return await apiRequest(
     "target",
     {},
-    5000
+    30000
   );
 
 }
@@ -2523,7 +2514,7 @@ function validateBeforeCamera(
 
 
 /* =========================================================
-   TARGET CHECK - INSTANT
+   TARGET CHECK - FINAL
    ========================================================= */
 
 async function checkTarget() {
@@ -2902,7 +2893,7 @@ function startTargetMonitor() {
 
 
 /* =========================================================
-   START CAMERA - INSTANT / WARM CAMERA
+   START CAMERA - FINAL
    ========================================================= */
 
 
@@ -3110,7 +3101,7 @@ function startScanLoop() {
 
 
 /* =========================================================
-   STOP CAMERA - INSTANT / PAUSE SCAN
+   STOP CAMERA - FINAL
    ========================================================= */
 
 function pauseCamera() {
