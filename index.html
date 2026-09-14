@@ -530,9 +530,10 @@ let cameraStream =
   null;
 
 let cameraRequestId = 0;
-  
 
-  let cameraRequestToken = 0;
+let cameraRequestToken = 0;
+
+let cameraPreparePromise = null;
 
 let cameraHold = false;
 
@@ -1973,6 +1974,15 @@ async function preloadFaceSystem() {
            1. AMBIL DATABASE
         */
 
+        /*
+           CAMERA WARM-UP
+
+           Camera disiapkan sejak halaman dibuka.
+           Tidak menunggu klik target.
+        */
+        prepareCamera();
+
+
         await loadDatabaseOnce();
 
 
@@ -2552,7 +2562,7 @@ async function checkTarget() {
 
       if (currentTarget) {
 
-        stopCamera();
+        pauseCamera();
 
         currentTarget = null;
 
@@ -2684,7 +2694,7 @@ async function checkTarget() {
          * CAMERA HARUS OFF
          */
 
-        stopCamera();
+        pauseCamera();
 
         return;
 
@@ -2729,7 +2739,7 @@ async function checkTarget() {
 
     if (scanning) {
 
-      stopCamera();
+      pauseCamera();
 
     }
 
@@ -2818,10 +2828,11 @@ async function checkTarget() {
 
 
       /*
-       * Camera jangan hidup.
+       * Scan jangan berjalan pada target invalid.
+       * Stream camera tetap warm/ready.
        */
 
-      stopCamera();
+      pauseCamera();
 
       return;
 
@@ -2886,145 +2897,173 @@ function startTargetMonitor() {
    ========================================================= */
 
 
-async function startCamera() {
+async function prepareCamera() {
 
-  if (cameraHold) {
-    return;
+  /* Sudah ada stream */
+  if (cameraStream) {
+    try {
+      const track = cameraStream.getVideoTracks()[0];
+      if (track && track.readyState === "live") {
+        return true;
+      }
+    } catch (e) {}
   }
 
-  if (scanning) {
-    return;
+  /* Request camera sedang berjalan */
+  if (cameraPreparePromise) {
+    return cameraPreparePromise;
   }
 
-  const requestId =
-    ++cameraRequestId;
+  const requestId = ++cameraRequestId;
 
-  try {
+  cameraPreparePromise = (async function() {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Camera API is not available in this browser.");
+      }
 
-    const stream =
-      await navigator.mediaDevices.getUserMedia({
+      const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          width: {
-            ideal: CAMERA_WIDTH
-          },
-          height: {
-            ideal: CAMERA_HEIGHT
-          },
+          width: { ideal: CAMERA_WIDTH },
+          height: { ideal: CAMERA_HEIGHT },
           facingMode: "user"
         },
         audio: false
       });
 
-    /*
-     * Kalau request camera ini sudah dibatalkan
-     * sebelum getUserMedia selesai,
-     * langsung matikan stream yang baru didapat.
-     */
-    if (
-      requestId !== cameraRequestId ||
-      cameraHold
-    ) {
-
-      stream
-        .getTracks()
-        .forEach(function(track) {
-          track.stop();
+      /* Jika request lama, buang stream baru */
+      if (requestId !== cameraRequestId) {
+        stream.getTracks().forEach(function(track) {
+          try { track.stop(); } catch (e) {}
         });
+        return false;
+      }
 
-      return;
-    }
+      /* Kalau stream lama masih hidup, jangan buat dua camera */
+      if (cameraStream) {
+        const oldTrack = cameraStream.getVideoTracks()[0];
+        if (oldTrack && oldTrack.readyState === "live") {
+          stream.getTracks().forEach(function(track) {
+            try { track.stop(); } catch (e) {}
+          });
+          return true;
+        }
+      }
 
-    cameraStream =
-      stream;
+      cameraStream = stream;
 
-    cameraStream
-      .getVideoTracks()
-      .forEach(function(track) {
+      cameraStream.getVideoTracks().forEach(function(track) {
         track.enabled = true;
+
+        /* Jika device memutus camera, tandai agar bisa recovery */
+        track.addEventListener("ended", function() {
+          if (cameraStream === stream) {
+            cameraStream = null;
+            scanning = false;
+            if (scanTimer) {
+              clearInterval(scanTimer);
+              scanTimer = null;
+            }
+            setStatus("CAMERA RECONNECTING...");
+            setTimeout(function() {
+              if (!document.hidden && !cameraStream) {
+                prepareCamera();
+              }
+            }, 500);
+          }
+        });
       });
 
-    video.srcObject =
-      cameraStream;
+      video.srcObject = cameraStream;
+      video.muted = true;
+      video.setAttribute("playsinline", "true");
 
-    await video.play();
+      try {
+        await video.play();
+      } catch (playError) {
+        console.log("VIDEO PLAY WAIT:", playError.message);
+      }
 
-    /*
-     * Cek sekali lagi setelah video play.
-     */
-    if (
-      requestId !== cameraRequestId ||
-      cameraHold
-    ) {
+      cameraBox.classList.add("active");
+      setStatus("CAMERA READY - CLICK TARGET");
+      return true;
 
-      stopCamera();
+    } catch (error) {
+      console.error("CAMERA PREPARE ERROR:", error);
 
-      return;
+      cameraStream = null;
+      video.srcObject = null;
+      cameraBox.classList.remove("active");
+
+      setStatus("CAMERA WAITING...");
+      resultBox.innerText =
+        "Allow camera access to use Face Scanner.";
+
+      return false;
+
+    } finally {
+      cameraPreparePromise = null;
     }
+  })();
 
-    cameraBox.classList.add(
-      "active"
-    );
+  return cameraPreparePromise;
+}
 
-    scanning = true;
 
-    stableCount = 0;
-    lastEmployee = "";
-    scanLocked = false;
+/* =========================================================
+   START SCANNER - FAST / WARM CAMERA
+   ========================================================= */
 
-    setStatus(
-      "READY TO SCAN"
-    );
+async function startCamera() {
 
-    startScanLoop();
-
-  } catch (error) {
-
-    /*
-     * Kalau request sudah dibatalkan,
-     * jangan tampilkan error.
-     */
-    if (
-      requestId !== cameraRequestId
-    ) {
-      return;
-    }
-
-    console.error(
-      "CAMERA ERROR:",
-      error
-    );
-
-    scanning = false;
-
-    cameraStream = null;
-
-    video.srcObject = null;
-
-    cameraBox.classList.remove(
-      "active"
-    );
-
-    setStatus(
-      "CAMERA ERROR"
-    );
-
-    resultBox.innerText =
-      "CAMERA ERROR\n" +
-      (
-        error &&
-        error.message
-          ? error.message
-          : "Unable to access camera."
-      );
+  if (cameraHold || scanning) {
+    return;
   }
+
+  /*
+     Camera sudah disiapkan sejak page load.
+     Kalau belum siap, tunggu request yang sama.
+  */
+  const ready = await prepareCamera();
+
+  if (!ready || !cameraStream) {
+    setStatus("CAMERA WAITING...");
+    return;
+  }
+
+  const track = cameraStream.getVideoTracks()[0];
+
+  if (!track || track.readyState !== "live") {
+    cameraStream = null;
+    const retry = await prepareCamera();
+    if (!retry || !cameraStream) {
+      setStatus("CAMERA WAITING...");
+      return;
+    }
+  }
+
+  try {
+    video.srcObject = cameraStream;
+    video.muted = true;
+    video.setAttribute("playsinline", "true");
+    await video.play();
+  } catch (error) {
+    console.log("VIDEO PLAY ERROR:", error.message);
+  }
+
+  cameraBox.classList.add("active");
+
+  scanning = true;
+  stableCount = 0;
+  lastEmployee = "";
+  scanLocked = false;
+
+  setStatus("READY TO SCAN");
+  startScanLoop();
 }
 
 
 
-
-
-
-  
 
   
 
@@ -3065,65 +3104,60 @@ function startScanLoop() {
    STOP CAMERA - FINAL
    ========================================================= */
 
-function stopCamera() {
+function pauseCamera() {
 
   /*
-   * Batalkan semua request camera
-   * yang masih berjalan.
-   */
-  cameraRequestId++;
-
+     PAUSE SCAN SAJA.
+     CAMERA STREAM TETAP HIDUP.
+  */
   scanning = false;
-
   scanLocked = false;
-
   stableCount = 0;
-
   lastEmployee = "";
 
   if (scanTimer) {
-
-    clearInterval(
-      scanTimer
-    );
-
+    clearInterval(scanTimer);
     scanTimer = null;
   }
 
   if (cameraStream) {
+    cameraStream.getVideoTracks().forEach(function(track) {
+      track.enabled = true;
+    });
 
-    cameraStream
-      .getTracks()
-      .forEach(function(track) {
+    cameraBox.classList.add("active");
+  }
+}
 
-        try {
-          track.stop();
-        } catch (e) {
-          console.error(
-            "TRACK STOP ERROR:",
-            e
-          );
-        }
 
-      });
+/* =========================================================
+   SHUTDOWN CAMERA - ONLY FOR PAGE EXIT / REAL RESET
+   ========================================================= */
 
+function stopCamera() {
+
+  cameraRequestId++;
+  cameraPreparePromise = null;
+
+  pauseCamera();
+
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(function(track) {
+      try { track.stop(); } catch (e) {
+        console.error("TRACK STOP ERROR:", e);
+      }
+    });
     cameraStream = null;
   }
 
   video.pause();
-
   video.srcObject = null;
-
-  cameraBox.classList.remove(
-    "active"
-  );
+  cameraBox.classList.remove("active");
 }
 
 
 
-
   
-
 
   
 
@@ -3650,7 +3684,12 @@ resultBox.innerText =
   employeeName;
 
 
-stopCamera();
+/*
+   SAVE SELESAI.
+   JANGAN MATIKAN CAMERA.
+   Hanya pause scan sampai target berikutnya.
+*/
+pauseCamera();
 
 completedTargetKey =
   currentTarget
@@ -3663,7 +3702,7 @@ completedTargetKey =
       )
     : "";
 
-cameraHold = true;
+cameraHold = false;
 
 currentTarget = null;
 
@@ -3734,6 +3773,9 @@ window.addEventListener(
        READY
     */
 
+    /* Camera warm-up berjalan langsung. */
+    prepareCamera();
+
     preloadFaceSystem();
 
   }
@@ -3766,7 +3808,13 @@ document.addEventListener(
       document.hidden
     ) {
 
+      /* Privacy/safety: matikan camera saat tab tidak terlihat. */
       stopCamera();
+
+    } else {
+
+      /* Saat kembali, siapkan camera lagi tanpa menunggu target. */
+      prepareCamera();
 
     }
 
