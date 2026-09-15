@@ -417,15 +417,15 @@ const CAMERA_HEIGHT =
 
 
 const DETECTOR_INPUT_SIZE =
-  96;
+  128;
 
 
 const TARGET_CHECK_INTERVAL =
-  150;
+  200;
 
 
 const SCAN_INTERVAL =
-  70;
+  150;
 
 
 const WARNING_TIME =
@@ -434,18 +434,6 @@ const WARNING_TIME =
 
 const CENTER_TOLERANCE =
   0.40;
-
-/* =========================================================
-   SUPER FACE QUALITY
-   ========================================================= */
-const MIN_FACE_WIDTH =
-  0;
-
-const MAX_FACE_WIDTH =
-  Infinity;
-
-const FACE_WARNING_COOLDOWN =
-  3000;
 
 
 /* =========================================================
@@ -603,12 +591,6 @@ let lastWarning = "";
 
 let dismissedWarning = "";
 
-let lastFaceWarning =
-  "";
-
-let lastFaceWarningAt =
-  0;
-
 /* =========================================================
    STATUS
    ========================================================= */
@@ -652,19 +634,6 @@ function showWarning(text) {
 
   warningBox.style.display =
     "block";
-}
-
-
-/* =========================================================
-   THROTTLED FACE WARNING
-   Prevent popup spam while the camera is running.
-   ========================================================= */
-function showFaceWarningThrottled(text) {
-  /* INTENTIONALLY SILENT.
-     Only attendance warnings are allowed to interrupt the operator:
-     1) TIME GAP <= 1 minute
-     2) REQUIRED TARGET COLUMN/DATA NOT FILLED
-  */
 }
 
 
@@ -2402,8 +2371,7 @@ function validateBeforeCamera(
       ok: false,
 
       message:
-        "TARGET NOT READY\n\n" +
-        "PLEASE CLICK A FACE ATTENDANCE CELL FIRST."
+        "TARGET NOT READY"
 
     };
 
@@ -2411,26 +2379,6 @@ function validateBeforeCamera(
 
   const column =
     Number(target.column);
-
-  const allowedColumns = [
-    1, 5, 13, 20, 24, 31, 35
-  ];
-
-  if (
-    !allowedColumns.includes(column)
-  ) {
-
-    return {
-
-      ok: false,
-
-      message:
-        "INVALID TARGET\n\n" +
-        "PLEASE CLICK A, E, M, T, X, AE OR AI."
-
-    };
-
-  }
 
   /*
      TIME IN E / X / AI
@@ -2501,7 +2449,7 @@ function validateBeforeCamera(
 
         message:
           "REMARK REQUIRED\n\n" +
-          "PLEASE FILL REMARK FIRST BEFORE SCANNING TIME IN , THANKYOU☺️."
+          "Please enter Remark in column G before scanning Time In."
 
       };
 
@@ -2539,7 +2487,7 @@ function validateBeforeCamera(
 
         message:
           "REMARK REQUIRED\n\n" +
-          "PLEASE FILL ROOM BEFORE SCANNING TIME IN , THANKYOU☺️."
+          "Please enter Remark in column AK before scanning Time In."
 
       };
 
@@ -2605,30 +2553,6 @@ async function checkTarget() {
 
     }
 
-    /*
-       SERVER WARNING HAS PRIORITY.
-       This keeps the browser warning synchronized
-       with the Google Sheet validation.
-    */
-    if (
-      data.warning &&
-      String(data.warning).trim()
-    ) {
-
-      const serverWarning =
-        String(data.warning).trim();
-
-      const allowedWarning =
-        /TIME IN NOT ALLOWED|REMARK REQUIRED|ROOM|EMPLOYEE NUMBER/i.test(
-          serverWarning
-        );
-
-      if (allowedWarning) {
-        showWarning(serverWarning);
-      }
-
-    }
-
 
     /* =====================================================
        NO TARGET
@@ -2641,7 +2565,6 @@ async function checkTarget() {
         pauseCamera();
 
         currentTarget = null;
-        completedTargetKey = "";
 
         scanLocked = false;
 
@@ -2721,27 +2644,6 @@ async function checkTarget() {
 
     if (newKey === oldKey) {
 
-      /*
-         TARGET SUDAH BERHASIL DI-SCAN.
-         Jangan start camera recognition lagi walaupun
-         polling target berjalan setiap 200 ms.
-      */
-      if (completedTargetKey === newKey) {
-        cameraHold = true;
-        scanLocked = true;
-        scanning = false;
-
-        if (scanTimer) {
-          clearInterval(scanTimer);
-          scanTimer = null;
-        }
-
-        targetInfo.innerText =
-          "TARGET COMPLETED - WAITING FOR NEXT TARGET";
-
-        return;
-      }
-
       const validation =
         validateBeforeCamera(
           currentTarget,
@@ -2781,13 +2683,9 @@ async function checkTarget() {
           )
         ) {
 
-          if (
-            /TIME IN NOT ALLOWED|REMARK REQUIRED|ROOM|EMPLOYEE NUMBER/i.test(
-              String(validation.message || "")
-            )
-          ) {
-            showWarning(validation.message);
-          }
+          showWarning(
+            validation.message
+          );
 
         }
 
@@ -2924,13 +2822,9 @@ async function checkTarget() {
        * Warning hanya satu kali.
        */
 
-      if (
-        /TIME IN NOT ALLOWED|REMARK REQUIRED|ROOM|EMPLOYEE NUMBER/i.test(
-          String(validation.message || "")
-        )
-      ) {
-        showWarning(validation.message);
-      }
+      showWarning(
+        validation.message
+      );
 
 
       /*
@@ -3122,7 +3016,7 @@ async function prepareCamera() {
 
 async function startCamera() {
 
-  if (cameraHold || scanning || scanLocked) {
+  if (cameraHold || scanning) {
     return;
   }
 
@@ -3134,9 +3028,6 @@ async function startCamera() {
 
   if (!ready || !cameraStream) {
     setStatus("CAMERA WAITING...");
-    showFaceWarningThrottled(
-      "CAMERA NOT READY\n\nPLEASE CHECK CAMERA PERMISSION AND CAMERA CONNECTION."
-    );
     return;
   }
 
@@ -3179,153 +3070,32 @@ async function startCamera() {
   
 
 /* =========================================================
-   PENDING / AUTO-READY
-   ========================================================= */
-function makeTargetKey(target) {
-
-  if (!target) {
-    return "";
-  }
-
-  return (
-    String(target.sheet || "") +
-    "|" +
-    String(target.row || "") +
-    "|" +
-    String(target.column || "")
-  );
-}
-
-function enterPendingTarget(target, reason) {
-
-  pendingTargetKey =
-    makeTargetKey(target);
-
-  pendingReason =
-    String(reason || "WAITING");
-
-  pendingSince =
-    Date.now();
-
-  scanning = false;
-  scanLocked = false;
-  stableCount = 0;
-  lastEmployee = "";
-
-  if (scanTimer) {
-    clearTurboScanTimer();
-  }
-
-  setStatus(
-    "PENDING - WAITING"
-  );
-
-  resultBox.innerText =
-    pendingReason;
-}
-
-function clearPendingTarget() {
-
-  pendingTargetKey = "";
-  pendingReason = "";
-  pendingSince = 0;
-}
-
-/* =========================================================
-   ULTRA TURBO TIMER CONTROL
-   ========================================================= */
-function clearTurboScanTimer() {
-
-  if (!scanTimer) {
-    return;
-  }
-
-  if (
-    typeof scanTimer === "object" &&
-    typeof scanTimer.stop === "function"
-  ) {
-    try {
-      scanTimer.stop();
-    } catch (e) {}
-  } else {
-    try {
-      clearInterval(scanTimer);
-      clearTimeout(scanTimer);
-    } catch (e) {}
-  }
-
-  scanTimer = null;
-}
-
-
-/* =========================================================
    SCAN LOOP
    ========================================================= */
 
 function startScanLoop() {
 
-  if (scanTimer) {
+  if (
+    scanTimer
+  ) {
+
     return;
+
   }
 
+
+  scanTimer =
+    setInterval(
+      scanFace,
+      SCAN_INTERVAL
+    );
+
+
   /*
-     ULTRA TURBO LOOP
-     - No overlapping scan requests.
-     - Uses a lightweight timer gate.
-     - Immediately continues after each scan cycle.
-     - Target lock still stops recognition instantly after success.
+     Scan langsung.
   */
 
-  let stopped = false;
-
-  const turboTick = async function() {
-
-    if (
-      stopped ||
-      !scanning ||
-      scanLocked
-    ) {
-      return;
-    }
-
-    const started =
-      performance.now();
-
-    await scanFace();
-
-    if (
-      stopped ||
-      !scanning ||
-      scanLocked
-    ) {
-      return;
-    }
-
-    const elapsed =
-      performance.now() - started;
-
-    const delay =
-      Math.max(
-        0,
-        SCAN_INTERVAL - elapsed
-      );
-
-    scanTimer =
-      setTimeout(
-        turboTick,
-        delay
-      );
-
-  };
-
-  scanTimer = {
-    turbo: true,
-    stop: function() {
-      stopped = true;
-    }
-  };
-
-  turboTick();
+  scanFace();
 
 }
 
@@ -3346,7 +3116,8 @@ function pauseCamera() {
   lastEmployee = "";
 
   if (scanTimer) {
-    clearTurboScanTimer();
+    clearInterval(scanTimer);
+    scanTimer = null;
   }
 
   if (cameraStream) {
@@ -3356,37 +3127,6 @@ function pauseCamera() {
 
     cameraBox.classList.add("active");
   }
-}
-
-
-/* =========================================================
-   SUCCESS LOCK
-   ---------------------------------------------------------
-   Setelah target berhasil, JANGAN SCAN LAGI pada target yang
-   sama. Camera stream tetap hidup/warm, tetapi recognition
-   loop dikunci sampai target Google Sheets berubah.
-   ========================================================= */
-function lockCompletedTarget() {
-
-  scanning = false;
-  scanLocked = true;
-  scanProcessing = false;
-  stableCount = 0;
-  lastEmployee = "";
-  cameraHold = true;
-
-  if (scanTimer) {
-    clearTurboScanTimer();
-  }
-
-  if (cameraStream) {
-    cameraStream.getVideoTracks().forEach(function(track) {
-      track.enabled = true;
-    });
-    cameraBox.classList.add("active");
-  }
-
-  setStatus("TARGET COMPLETED - WAITING FOR NEXT TARGET");
 }
 
 
@@ -3615,24 +3355,31 @@ async function scanFace() {
        DETECT SEMUA WAJAH
     */
 
-    const detection =
-      await faceapi
-        .detectSingleFace(
-          video,
-          new faceapi.TinyFaceDetectorOptions({
-            inputSize:
-              DETECTOR_INPUT_SIZE,
-            scoreThreshold:
-              0.50
-          })
-        )
-        .withFaceLandmarks(true)
-        .withFaceDescriptor();
-
     const detections =
-      detection
-        ? [detection]
-        : [];
+      await faceapi
+
+        .detectAllFaces(
+
+          video,
+
+          new faceapi
+            .TinyFaceDetectorOptions({
+
+              inputSize:
+                DETECTOR_INPUT_SIZE,
+
+              scoreThreshold:
+                0.5
+
+            })
+
+        )
+
+        .withFaceLandmarks(
+          true
+        )
+
+        .withFaceDescriptors();
 
 
     if (
@@ -3650,17 +3397,20 @@ async function scanFace() {
       resultBox.innerText =
         "NO FACE DETECTED";
 
+
       distanceBox.innerText =
         "";
 
-      showFaceWarningThrottled(
-        "NO FACE DETECTED\n\n" +
-        "PLEASE LOOK DIRECTLY AT THE CAMERA."
-      );
 
       return;
 
     }
+
+
+    /*
+       Kalau lebih dari satu orang,
+       ambil yang paling dekat tengah.
+    */
 
     const centerFace =
       findCenterFace(
@@ -3675,75 +3425,27 @@ async function scanFace() {
       stableCount =
         0;
 
+
       lastEmployee =
         "";
 
+
       resultBox.innerText =
-        "MOVE FACE TO CENTER";
+        detections.length > 1
+
+          ? "CENTER FACE ONLY"
+
+          : "MOVE FACE TO CENTER";
+
 
       distanceBox.innerText =
         "";
 
-      showFaceWarningThrottled(
-        "FACE POSITION WARNING\n\n" +
-        "PLEASE MOVE YOUR FACE TO THE CENTER."
-      );
 
       return;
 
     }
 
-    /*
-       FACE SIZE / DISTANCE CHECK
-    */
-    const faceWidth =
-      Number(
-        centerFace.detection.box.width
-      );
-
-    if (
-      false &&
-      faceWidth < MIN_FACE_WIDTH
-    )
-
-      stableCount = 0;
-      lastEmployee = "";
-
-      resultBox.innerText =
-        "MOVE CLOSER";
-
-      distanceBox.innerText =
-        "FACE TOO FAR";
-
-      showFaceWarningThrottled(
-        "FACE TOO FAR\n\n" +
-        "PLEASE MOVE CLOSER TO THE CAMERA."
-      );
-
-      return;
-    }
-
-    if (
-      false &&
-      faceWidth > MAX_FACE_WIDTH
-    )
-
-      stableCount = 0;
-      lastEmployee = "";
-
-      resultBox.innerText =
-        "MOVE BACK";
-
-      distanceBox.innerText =
-        "FACE TOO CLOSE";
-
-      showFaceWarningThrottled(
-        "FACE TOO CLOSE\n\n" +
-        "PLEASE MOVE A LITTLE BACK."
-      );
-
-      return;
-    }
 
     /*
        MATCH
@@ -3804,10 +3506,6 @@ async function scanFace() {
       resultBox.innerText =
         "FACE NOT RECOGNIZED";
 
-      showFaceWarningThrottled(
-        "FACE NOT RECOGNIZED\n\n" +
-        "PLEASE LOOK AT THE CAMERA OR REGISTER THE CORRECT FACE."
-      );
 
       return;
 
@@ -3949,32 +3647,21 @@ async function scanFace() {
       );
 
 
-      const failMessage =
+      resultBox.innerText =
+
         response &&
         (
           response.message ||
           response.error
         )
+
           ? (
               response.message ||
               response.error
             )
+
           : "SCAN FAILED";
 
-      resultBox.innerText =
-        failMessage;
-
-      /* Generic scan failures stay in the status area.
-         Modal warnings are reserved for the two requested cases. */
-
-      /*
-         If the server actually wrote the target but failed later
-         (for example during sheet protection), do not hammer the
-         same target. Let target polling decide its final state.
-      */
-      setTimeout(function() {
-        checkTarget();
-      }, 250);
 
       return;
 
@@ -3986,8 +3673,6 @@ async function scanFace() {
    SUCCESS
 */
 
-clearPendingTarget();
-
 setStatus(
   "SCAN SUCCESS"
 );
@@ -3998,11 +3683,14 @@ resultBox.innerText =
   " " +
   employeeName;
 
+
 /*
-   AUTO LOCK: target yang baru selesai tidak boleh discan
-   terus-menerus. Camera tetap warm supaya target berikutnya
-   bisa langsung diproses tanpa restart camera/model.
+   SAVE SELESAI.
+   JANGAN MATIKAN CAMERA.
+   Hanya pause scan sampai target berikutnya.
 */
+pauseCamera();
+
 completedTargetKey =
   currentTarget
     ? (
@@ -4014,10 +3702,12 @@ completedTargetKey =
       )
     : "";
 
-lockCompletedTarget();
+cameraHold = false;
+
+currentTarget = null;
 
 targetInfo.innerText =
-  "TARGET COMPLETED - WAITING FOR NEXT TARGET";
+  "WAITING FOR TARGET";
 
 
     
@@ -4057,45 +3747,10 @@ setTimeout(
   } finally {
 
     scanProcessing = false;
-    processingStartedAt = 0;
 
   }
 
 }
-
-
-/* =========================================================
-   PROCESSING WATCHDOG
-   Prevent a transient browser/API hang from requiring refresh.
-   ========================================================= */
-let processingStartedAt = 0;
-
-setInterval(function() {
-
-  if (
-    scanProcessing &&
-    processingStartedAt > 0 &&
-    Date.now() - processingStartedAt > 8000
-  ) {
-
-    console.warn(
-      "SCAN PROCESSING WATCHDOG RESET"
-    );
-
-    scanProcessing = false;
-    scanLocked = false;
-    stableCount = 0;
-    lastEmployee = "";
-
-    if (currentTarget) {
-      enterPendingTarget(
-        currentTarget,
-        "RETRYING - SERVER RESPONSE DELAYED"
-      );
-    }
-  }
-
-}, 1000);
 
 
 /* =========================================================
@@ -4160,14 +3815,6 @@ document.addEventListener(
 
       /* Saat kembali, siapkan camera lagi tanpa menunggu target. */
       prepareCamera();
-
-      if (
-        currentTarget &&
-        !scanProcessing &&
-        !scanLocked
-      ) {
-        checkTarget();
-      }
 
     }
 
